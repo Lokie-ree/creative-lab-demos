@@ -20,6 +20,7 @@ export default function Home() {
   const connectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleSolidChange = useCallback((id: SolidId) => {
+    if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
     setSolidId(id);
     setCsgGeometry(null);
     setPlaneInteracted(false);
