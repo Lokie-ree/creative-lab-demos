@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { solidMaterial, wireframeMaterial } from "~/data/materials";
@@ -8,8 +8,8 @@ import { CuttingGeometry } from "~/components/CuttingGeometry";
 import type { SolidId, ModeId } from "~/types";
 
 const GEOMETRIES = {
-  cone: new THREE.ConeGeometry(1.2, 3, 64, 1, true),
-  cylinder: new THREE.CylinderGeometry(1, 1, 3, 64, 1, true),
+  cone: new THREE.ConeGeometry(1.2, 3, 64, 1, false),
+  cylinder: new THREE.CylinderGeometry(1, 1, 3, 64, 1, false),
   cube: new THREE.BoxGeometry(2.2, 2.2, 2.2),
   sphere: new THREE.SphereGeometry(1.3, 64, 32),
 };
@@ -18,9 +18,11 @@ interface SceneContentProps {
   solidId: SolidId;
   mode: ModeId;
   orbitRef: React.RefObject<OrbitControlsImpl | null>;
+  onInteract?: () => void;
+  onShapeChange?: (geo: THREE.BufferGeometry) => void;
 }
 
-function SceneContent({ solidId, mode, orbitRef }: SceneContentProps) {
+function SceneContent({ solidId, mode, orbitRef, onInteract, onShapeChange }: SceneContentProps) {
   const geometry = GEOMETRIES[solidId];
 
   const handleDragStart = () => {
@@ -33,9 +35,12 @@ function SceneContent({ solidId, mode, orbitRef }: SceneContentProps) {
   if (mode === "crossSection") {
     return (
       <CuttingGeometry
+        key={solidId}
         solidGeometry={geometry}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onInteract={onInteract}
+        onShapeChange={onShapeChange}
       />
     );
   }
@@ -51,9 +56,11 @@ function SceneContent({ solidId, mode, orbitRef }: SceneContentProps) {
 interface SolidSceneProps {
   solidId: SolidId;
   mode: ModeId;
+  onInteract?: () => void;
+  onShapeChange?: (geo: THREE.BufferGeometry) => void;
 }
 
-export function SolidScene({ solidId, mode }: SolidSceneProps) {
+export function SolidScene({ solidId, mode, onInteract, onShapeChange }: SolidSceneProps) {
   const orbitRef = useRef<OrbitControlsImpl | null>(null);
 
   return (
@@ -75,7 +82,7 @@ export function SolidScene({ solidId, mode }: SolidSceneProps) {
         minPolarAngle={Math.PI * 0.1}
         maxPolarAngle={Math.PI * 0.9}
       />
-      <SceneContent solidId={solidId} mode={mode} orbitRef={orbitRef} />
+      <SceneContent solidId={solidId} mode={mode} orbitRef={orbitRef} onInteract={onInteract} onShapeChange={onShapeChange} />
     </Canvas>
   );
 }
