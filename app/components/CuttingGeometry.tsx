@@ -41,12 +41,13 @@ export function CuttingGeometry({
       new THREE.MeshStandardMaterial({ color: SOLID_COLOR, transparent: true, opacity: 0.85, roughness: 0.7, metalness: 0.1 }),
       new THREE.MeshStandardMaterial({ color: SECTION_COLOR, transparent: true, opacity: 0.85, roughness: 0.3, metalness: 0.2, side: THREE.DoubleSide }),
     ];
-  });
+  }, []);
 
   // GSAP pulse on drag handle to signal affordance
   useEffect(() => {
     const target = pulseTargetRef.current;
     if (!target) return;
+    gsap.set(target.scale, { x: 1, y: 1, z: 1 });
     const tween = gsap.to(target.scale, {
       x: 1.06,
       y: 1.06,
