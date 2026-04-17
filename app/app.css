@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --color-ground: oklch(12% 0.015 75);
+  --color-surface: oklch(17% 0.018 75);
+  --color-surface-hi: oklch(22% 0.018 75);
+  --color-ink: oklch(92% 0.010 80);
+  --color-muted: oklch(55% 0.012 75);
+  --color-rule: oklch(28% 0.014 75);
+  --color-amber: oklch(72% 0.16 78);
+  --color-amber-dim: oklch(55% 0.12 78);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-ground);
+  color: var(--color-ink);
+  color-scheme: dark;
+  height: 100%;
+  overflow: hidden;
+}
