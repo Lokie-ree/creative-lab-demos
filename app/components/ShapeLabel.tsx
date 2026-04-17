@@ -28,26 +28,31 @@ export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
 
+  // Animate label in when shape changes
   useEffect(() => {
-    if (!labelRef.current || !result) return;
-    gsap.fromTo(
+    if (!labelRef.current) return;
+    const tween = gsap.fromTo(
       labelRef.current,
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
     );
+    return () => { tween.kill(); };
   }, [result?.key]);
 
+  // Animate connection sentence on visibility toggle
   useEffect(() => {
     if (!connectionRef.current) return;
+    let tween: gsap.core.Tween;
     if (connectionVisible) {
-      gsap.fromTo(
+      tween = gsap.fromTo(
         connectionRef.current,
         { opacity: 0, y: 6 },
         { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
       );
     } else {
-      gsap.to(connectionRef.current, { opacity: 0, duration: 0.3 });
+      tween = gsap.to(connectionRef.current, { opacity: 0, duration: 0.3 });
     }
+    return () => { tween.kill(); };
   }, [connectionVisible]);
 
   if (!result) return null;
@@ -81,6 +86,7 @@ export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
       >
         {result.label}
       </div>
+      {/* opacity 0 is load-bearing — GSAP controls visibility from here */}
       {sentence && (
         <div
           ref={connectionRef}
