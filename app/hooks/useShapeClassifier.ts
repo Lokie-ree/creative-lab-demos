@@ -49,6 +49,9 @@ function classifyShape(verts: THREE.Vector3[], solidId: SolidId): string {
 
   if (n === 6) return "hexagon";
 
+  // n === 5 (pentagon) intentionally falls through to the many-vertex path;
+  // pentagons are not in scope and would be extremely rare at this epsilon.
+
   // Many vertices: distinguish circle, ellipse, parabola
   // Parabola heuristic: cone + cut face is significantly taller than wide in world Y
   // (cutting plane parallel to slant produces an open, elongated curve)
@@ -80,6 +83,7 @@ export function useShapeClassifier(
     const vertCount = group1.count;
 
     const slice = rawArray.slice(startVert * 3, (startVert + vertCount) * 3);
+    // slice is already offset-adjusted; index 0 = startVert
     const unique = deduplicateVerts(slice, vertCount);
 
     if (unique.length === 0) return null;
