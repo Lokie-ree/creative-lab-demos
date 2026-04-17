@@ -18,9 +18,17 @@ export default function Home() {
   const [planeInteracted, setPlaneInteracted] = useState(false);
   const [connectionVisible, setConnectionVisible] = useState(false);
   const connectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
+    };
+  }, []);
 
   const handleSolidChange = useCallback((id: SolidId) => {
     if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
+    prevKeyRef.current = null;
     setSolidId(id);
     setCsgGeometry(null);
     setPlaneInteracted(false);
@@ -38,7 +46,6 @@ export default function Home() {
   const classifyResult = useShapeClassifier(csgGeometry, solidId, planeInteracted);
 
   // Show connection moment for 4s on first classify result per solid
-  const prevKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!classifyResult) return;
     if (classifyResult.key === prevKeyRef.current) return;
