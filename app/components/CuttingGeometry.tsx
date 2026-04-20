@@ -1,57 +1,66 @@
-import { Geometry, Base, Subtraction } from "@react-three/csg";
-import { PivotControls } from "@react-three/drei";
-import { useRef } from "react";
+import { Geometry, Base, type CSGGeometryRef } from "@react-three/csg";
+import { useRef, useEffect } from "react";
 import * as THREE from "three";
-import {
-  solidMaterial,
-  sectionMaterial,
-  wireframeMaterial,
-} from "~/data/materials";
+import { wireframeMaterial } from "~/data/materials";
+import { JoystickGizmo } from "~/components/JoystickGizmo";
 
 interface CuttingGeometryProps {
   solidGeometry: THREE.BufferGeometry;
   onShapeChange?: (geometryResult: THREE.BufferGeometry) => void;
   onDragStart?: () => void;
   onDragEnd?: () => void;
+  onInteract?: () => void;
 }
 
-type CsgApi = { update(): void; geometry: THREE.BufferGeometry };
-
-const CSG_MATERIALS = [solidMaterial, sectionMaterial];
+const SOLID_COLOR = 0x232018;
+const SECTION_COLOR = 0xd4962a;
 
 export function CuttingGeometry({
   solidGeometry,
   onShapeChange,
   onDragStart,
   onDragEnd,
+  onInteract,
 }: CuttingGeometryProps) {
-  const csg = useRef<CsgApi>(null);
+  const csg = useRef<CSGGeometryRef>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
 
-  const handleDrag = () => {
-    csg.current?.update();
-    if (onShapeChange && csg.current) {
-      onShapeChange(csg.current.geometry);
-    }
-  };
+  // Safety net: if the CSG library's material-assignment path fails in R3F v9,
+  // force a 2-entry array so groups with materialIndex 0/1 always resolve correctly.
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || Array.isArray(mesh.material)) return;
+    mesh.material = [
+      new THREE.MeshStandardMaterial({
+        color: SOLID_COLOR, transparent: true, opacity: 0.85, roughness: 0.7, metalness: 0.1,
+      }),
+      new THREE.MeshStandardMaterial({
+        color: SECTION_COLOR, transparent: true, opacity: 0.85, roughness: 0.3, metalness: 0.2,
+        side: THREE.DoubleSide,
+      }),
+    ];
+  }, []);
 
   return (
-    <mesh material={CSG_MATERIALS}>
-      <Geometry ref={csg} useGroups computeVertexNormals>
-        <Base geometry={solidGeometry} />
-        <PivotControls
-          depthTest={false}
-          anchor={[0, -1, 0]}
-          activeAxes={[false, true, false]}
-          onDrag={handleDrag}
+    <mesh ref={meshRef}>
+      <Geometry ref={csg} useGroups consolidateGroups computeVertexNormals>
+        <Base geometry={solidGeometry}>
+          <meshStandardMaterial
+            color={SOLID_COLOR}
+            transparent
+            opacity={0.85}
+            roughness={0.7}
+            metalness={0.1}
+          />
+        </Base>
+        <JoystickGizmo
+          csgRef={csg}
+          solidGeometry={solidGeometry}
           onDragStart={onDragStart}
           onDragEnd={onDragEnd}
-          scale={80}
-          fixed
-        >
-          <Subtraction position={[0, 5, 0]}>
-            <boxGeometry args={[10, 10, 10]} />
-          </Subtraction>
-        </PivotControls>
+          onInteract={onInteract}
+          onShapeChange={onShapeChange}
+        />
       </Geometry>
       <mesh geometry={solidGeometry} material={wireframeMaterial} />
     </mesh>
