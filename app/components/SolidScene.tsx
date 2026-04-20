@@ -66,7 +66,7 @@ export function SolidScene({ solidId, mode, onInteract, onShapeChange }: SolidSc
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: [0, 2, 7], fov: 45, near: 0.1, far: 100 }}
+      camera={{ position: [5, 2, 5], fov: 45, near: 0.1, far: 100 }}
       style={{ background: "var(--color-ground)", width: "100%", height: "100%" }}
     >
       <ambientLight intensity={0.3} color={0xede8e0} />
