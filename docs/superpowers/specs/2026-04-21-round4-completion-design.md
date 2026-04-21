@@ -145,6 +145,10 @@ cylinder: [
 
 The silhouette line display gains the correct half-rectangle profile (matching the PRD's "rectangle" silhouette description). The LatheGeometry gains closed caps.
 
+**Cone and sphere are already correct.** The cone profile starts at `(0, 1.5)` (apex, on axis) and ends at `(0, -1.5)` (base center, on axis). The sphere profile is a 17-point semicircular arc starting at `(0, 1.3)` and ending at `(0, -1.3)`, both on the axis. `LatheGeometry` closes geometry automatically when the first and last points lie on the Y axis — only the cylinder was missing this. No changes to cone or sphere profiles.
+
+**Wireframe and lighting (fixes 2b and 2c) apply equally to all three shapes** — they operate on the `geometry` prop in `RotationScene` unconditionally. Cone, cylinder, and sphere all receive the wireframe overlay and the axis point light.
+
 ### 2b — Wireframe overlay (`RotationScene.tsx`)
 
 Mode A renders the solid with a faint wireframe overlay (`wireframeMaterial`, gray, opacity 0.1). Add the same treatment to the rotation solid:
