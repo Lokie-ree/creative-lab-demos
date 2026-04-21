@@ -3,7 +3,7 @@
 **Date:** 2026-04-21
 **Project:** Cross-Section Explorer
 **Spec authority:** `demos/cross-section-explorer/prd.md`
-**Scope:** Two targeted fixes to complete Round 4 to shippable quality
+**Scope:** Four targeted fixes to complete Round 4 to shippable quality
 
 ---
 
@@ -14,6 +14,10 @@ Round 4 implementation is functionally complete but has two outstanding issues:
 1. **Connection sentence never fires.** `ShapeLabel` wires the sentence animation to `result?.key` (fires on every cross-section classification) instead of `connectionVisible` (fires only on the connection moment). The PRD-defined sentence is also absent — a `CONNECTION_SENTENCES` per-shape map was added that has no basis in the PRD. In rotation mode, `result` is null so no sentence renders at all.
 
 2. **Rotation scene lacks Mode A visual quality.** The materialising solid has no wireframe overlay (Mode A has one), the cylinder profile produces an open tube (no caps), and there is no scene lighting that activates with the solid.
+
+3. **RESET does not clear the rotation label.** The RESET button calls `reset()` from `useSolidRotation` but never dispatches `RESET_ROTATION` to the reducer. `state.rotationComplete` remains `true` so `rotationLabel` keeps showing and the ShapeLabel does not unmount.
+
+4. **Button and label overlap.** In rotation mode, the ROTATE/RESET button (`bottom: 80`) and the ShapeLabel (`bottom: 68`) occupy overlapping vertical space once rotation is complete and both are visible simultaneously.
 
 ---
 
@@ -178,6 +182,50 @@ Light starts at intensity 0 and tweens to 0.6 on completion. Colour matches the 
 
 ---
 
+## Fix 3 — RESET clears the label (`home.tsx`)
+
+The RESET button handler calls `reset()` from `useSolidRotation` but does not dispatch `RESET_ROTATION` to the reducer. `state.rotationComplete` stays `true`, so the `rotationLabel` derived value remains set and the ShapeLabel stays mounted.
+
+Fix: dispatch `RESET_ROTATION` alongside `reset()`:
+
+```tsx
+onClick={() => {
+  if (state.rotationComplete) {
+    reset();
+    dispatch({ type: "RESET_ROTATION" });
+  } else {
+    start();
+  }
+}}
+```
+
+`RESET_ROTATION` sets `rotationComplete: false` and `rotationAngle: 0` in the reducer. `rotationLabel` then evaluates to `undefined`, the ShapeLabel unmounts, and the button label returns to "ROTATE →".
+
+`RESET_ROTATION` does not touch `connectionVisible` — a student who earned the connection moment keeps it until the auto-dismiss timer fires.
+
+---
+
+## Fix 4 — Button / label spacing (`home.tsx`)
+
+When rotation is complete, both the ShapeLabel (`bottom: 68`) and the ROTATE/RESET button (`bottom: 80`) are visible. The button occupies ~80–116px from the bottom of the scene container; the ShapeLabel label text occupies ~68–96px. They overlap.
+
+Fix: raise the button to `bottom: 128` when `state.rotationComplete` is true so label and button stack cleanly with ~8px gap:
+
+```tsx
+<div
+  style={{
+    position: "absolute",
+    bottom: state.rotationComplete ? 128 : 80,
+    left: "50%",
+    transform: "translateX(-50%)",
+  }}
+>
+```
+
+When `rotationComplete` is false the button sits at its original position. When true, the button is above the label with clear separation.
+
+---
+
 ## Completion Criteria
 
 - [ ] Connection sentence "That cross section — it's the shape you started with." appears when both modes are completed with the same non-cube solid, regardless of which mode the student is in when it fires
@@ -188,3 +236,5 @@ Light starts at intensity 0 and tweens to 0.6 on completion. Colour matches the 
 - [ ] Axis point light activates on rotation completion
 - [ ] `npm run build` passes with no TypeScript errors
 - [ ] Cube: connection moment does not fire
+- [ ] RESET button clears the rotation label and returns button text to "ROTATE →"
+- [ ] Button and label do not overlap — clear vertical separation when both are visible
