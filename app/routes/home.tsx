@@ -2,7 +2,7 @@ import { useReducer, useRef, useEffect } from "react";
 import type { SolidId } from "~/types";
 import { demoReducer, initialState } from "~/hooks/useDemoReducer";
 import { useSolidRotation } from "~/hooks/useSolidRotation";
-import { rotationMaterial } from "~/data/materials";
+import { rotationMaterial, silhouetteMaterial } from "~/data/materials";
 import { ModeBar } from "~/components/ModeBar";
 import { SolidScene } from "~/components/SolidScene";
 import { SolidSelector } from "~/components/SolidSelector";
@@ -57,6 +57,7 @@ export default function Home() {
   useEffect(() => {
     reset();
     rotationMaterial.opacity = 0;
+    silhouetteMaterial.opacity = 0.75; // restore after rotation-complete fade
   }, [state.solidId]);
 
   const handleSolidChange = (id: SolidId) => {

@@ -41,20 +41,17 @@ export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLa
     return () => { tween.kill(); };
   }, [animKey]);
 
+  // Sentence animates in on each new shape classification, same cadence as the label.
+  // connectionVisible is reserved for the both-modes-complete moment (future round).
   useEffect(() => {
     if (!connectionRef.current) return;
-    let tween: gsap.core.Tween;
-    if (connectionVisible) {
-      tween = gsap.fromTo(
-        connectionRef.current,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-      );
-    } else {
-      tween = gsap.to(connectionRef.current, { opacity: 0, duration: 0.3 });
-    }
+    const tween = gsap.fromTo(
+      connectionRef.current,
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+    );
     return () => { tween.kill(); };
-  }, [connectionVisible]);
+  }, [result?.key]);
 
   if (!result && !rotationLabel) return null;
 
