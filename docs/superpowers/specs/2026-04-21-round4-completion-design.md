@@ -73,7 +73,7 @@ useEffect(() => {
 }, [connectionVisible]);
 ```
 
-Duration changes from 0.4s → 0.6s per PRD.
+Duration for the sentence animation changes from 0.4s → 0.6s per PRD (sentence animation only — the shape label animation stays at 0.4s).
 
 **Guard on `sentence`:** The `{sentence && <div ref={connectionRef} ...>}` guard already exists. Since `sentence` is now `null` when `connectionVisible` is false, the div unmounts between connection moments, which means `connectionRef.current` will be null when `connectionVisible` is false. The effect guard `if (!connectionRef.current) return` handles this safely — the fade-out tween is not needed since the element is absent.
 
@@ -90,6 +90,26 @@ useEffect(() => {
   return () => { tween.kill(); };
 }, [connectionVisible]);
 ```
+
+**Connection sentence styling.** The PRD specifies amber / Fraunces italic for the connection moment copy. The current connection sentence div uses `color: "var(--color-muted)"` and `fontFamily: "'DM Sans'"` — matching the shape label's secondary style. Update the connection sentence div to:
+
+```tsx
+<div
+  ref={connectionRef}
+  style={{
+    fontFamily: "'Fraunces', serif",
+    fontStyle: "italic",
+    fontSize: 16,
+    color: "var(--color-amber)",
+    letterSpacing: "0.01em",
+    opacity: 0,
+  }}
+>
+  {sentence}
+</div>
+```
+
+Slightly smaller than the shape label (16px vs 28px) so it reads as subordinate copy, not a competing headline.
 
 **Works in both modes.** `home.tsx` already passes `connectionVisible` to `ShapeLabel` in both crossSection and rotation render paths. No changes to `home.tsx` required.
 
