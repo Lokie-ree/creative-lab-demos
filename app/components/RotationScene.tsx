@@ -25,6 +25,8 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry }: Ro
     return geo;
   }, []);
 
+  // R3F v9 doesn't strip trailing underscore from <line_> before catalog lookup,
+  // so we construct THREE.Line imperatively and render via <primitive>.
   const axisLine = useMemo(() => new THREE.Line(axisGeometry, axisLineMaterial), [axisGeometry]);
 
   const silhouetteGeometry = useMemo(() => {
