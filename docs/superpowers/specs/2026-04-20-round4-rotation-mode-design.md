@@ -305,7 +305,7 @@ Contents:
 
 - `const { angle: rotationAngle, geometry: rotationGeometry, isRotating, start, reset } = useSolidRotation(state.solidId, handleRotationComplete)` — destructure with aliases so prop names match `SolidScene`'s expectations
 - `handleRotationComplete`: dispatches `COMPLETE_ROTATION` only — this single action handles `rotationComplete`, `completedModes`, and `connectionVisible` inline in the reducer
-- `useEffect` on `state.solidId`: calls `reset()` to sync `useSolidRotation` internal state on solid change
+- `useEffect` on `state.solidId`: calls `reset()` to sync `useSolidRotation` internal `angle` and `isRotating` state on solid change. `rotationComplete` is reducer-owned and already reset by `SET_SOLID` — do not add a `rotationComplete` field to `useSolidRotation`. Also reset `rotationMaterial.opacity = 0` here so stale opacity from the previous solid's reveal does not bleed into the next solid.
 - ROTATE button `onClick`: `state.rotationComplete ? reset() : start()`
 - `SolidScene` receives `rotationAngle={rotationAngle}`, `rotationComplete={state.rotationComplete}`, `rotationGeometry={rotationGeometry}`
 
