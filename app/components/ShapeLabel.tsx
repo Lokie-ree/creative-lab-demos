@@ -8,22 +8,6 @@ interface ShapeLabelProps {
   rotationLabel?: string;
 }
 
-const CONNECTION_SENTENCES: Record<string, string> = {
-  "cone-circle": "A horizontal cut through a cone is always a circle.",
-  "cone-ellipse": "Tilt the cut and the circle stretches into an ellipse.",
-  "cone-triangle": "Cut through the apex and you get a triangle.",
-  "cone-parabola": "A cut parallel to the slant gives a parabola.",
-  "cone-point": "The apex itself is just a point.",
-  "cylinder-circle": "A flat cut through a cylinder is a circle.",
-  "cylinder-ellipse": "Tilt it and the circle becomes an ellipse.",
-  "cylinder-rectangle": "A side cut through a cylinder gives a rectangle.",
-  "cube-square": "A horizontal cut through a cube is a square.",
-  "cube-rectangle": "Cut off-axis and the square becomes a rectangle.",
-  "cube-hexagon": "Tilt at 45° and a cube reveals a hexagon.",
-  "cube-triangle": "A corner cut gives a triangle.",
-  "sphere-circle": "Every cross-section of a sphere is a circle.",
-};
-
 export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
@@ -41,21 +25,21 @@ export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLa
     return () => { tween.kill(); };
   }, [animKey]);
 
-  // Sentence animates in on each new shape classification, same cadence as the label.
-  // connectionVisible is reserved for the both-modes-complete moment (future round).
   useEffect(() => {
-    if (!connectionRef.current) return;
+    if (!connectionRef.current || !connectionVisible) return;
     const tween = gsap.fromTo(
       connectionRef.current,
       { opacity: 0, y: 6 },
-      { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
     );
     return () => { tween.kill(); };
-  }, [result?.key]);
+  }, [connectionVisible]);
 
   if (!result && !rotationLabel) return null;
 
-  const sentence = result ? (CONNECTION_SENTENCES[result.key] ?? null) : null;
+  const sentence = connectionVisible
+    ? "That cross section — it's the shape you started with."
+    : null;
 
   return (
     <div
@@ -88,10 +72,11 @@ export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLa
         <div
           ref={connectionRef}
           style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
-            color: "var(--color-muted)",
-            letterSpacing: "0.03em",
+            fontFamily: "'Fraunces', serif",
+            fontStyle: "italic",
+            fontSize: 16,
+            color: "var(--color-amber)",
+            letterSpacing: "0.01em",
             opacity: 0,
           }}
         >
