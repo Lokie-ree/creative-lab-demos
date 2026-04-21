@@ -1,4 +1,3 @@
-// app/components/ShapeLabel.tsx
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import type { ClassifyResult } from "~/hooks/useShapeClassifier";
@@ -6,6 +5,7 @@ import type { ClassifyResult } from "~/hooks/useShapeClassifier";
 interface ShapeLabelProps {
   result: ClassifyResult | null;
   connectionVisible: boolean;
+  rotationLabel?: string;
 }
 
 const CONNECTION_SENTENCES: Record<string, string> = {
@@ -24,22 +24,23 @@ const CONNECTION_SENTENCES: Record<string, string> = {
   "sphere-circle": "Every cross-section of a sphere is a circle.",
 };
 
-export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
+export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
 
-  // Animate label in when shape changes
+  const displayLabel = rotationLabel ?? result?.label ?? null;
+  const animKey = rotationLabel ?? result?.key;
+
   useEffect(() => {
-    if (!labelRef.current) return;
+    if (!labelRef.current || !displayLabel) return;
     const tween = gsap.fromTo(
       labelRef.current,
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
     );
     return () => { tween.kill(); };
-  }, [result?.key]);
+  }, [animKey]);
 
-  // Animate connection sentence on visibility toggle
   useEffect(() => {
     if (!connectionRef.current) return;
     let tween: gsap.core.Tween;
@@ -55,9 +56,9 @@ export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
     return () => { tween.kill(); };
   }, [connectionVisible]);
 
-  if (!result) return null;
+  if (!result && !rotationLabel) return null;
 
-  const sentence = CONNECTION_SENTENCES[result.key] ?? null;
+  const sentence = result ? (CONNECTION_SENTENCES[result.key] ?? null) : null;
 
   return (
     <div
@@ -84,9 +85,8 @@ export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
           textTransform: "lowercase",
         }}
       >
-        {result.label}
+        {displayLabel}
       </div>
-      {/* opacity 0 is load-bearing — GSAP controls visibility from here */}
       {sentence && (
         <div
           ref={connectionRef}
