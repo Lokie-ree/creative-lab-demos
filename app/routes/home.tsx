@@ -1,6 +1,8 @@
 import { useReducer, useRef, useEffect } from "react";
 import type { SolidId } from "~/types";
 import { demoReducer, initialState } from "~/hooks/useDemoReducer";
+import { useSolidRotation } from "~/hooks/useSolidRotation";
+import { rotationMaterial } from "~/data/materials";
 import { ModeBar } from "~/components/ModeBar";
 import { SolidScene } from "~/components/SolidScene";
 import { SolidSelector } from "~/components/SolidSelector";
@@ -11,9 +13,24 @@ export function meta() {
   return [{ title: "Cross-Section Explorer" }];
 }
 
+const ROTATION_LABELS: Record<string, string> = {
+  cone: "cone",
+  cylinder: "cylinder",
+  sphere: "sphere",
+};
+
 export default function Home() {
   const [state, dispatch] = useReducer(demoReducer, initialState);
   const connectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleRotationComplete = () => {
+    dispatch({ type: "COMPLETE_ROTATION" });
+  };
+
+  const { angle: rotationAngle, geometry: rotationGeometry, start, reset } = useSolidRotation(
+    state.solidId,
+    handleRotationComplete,
+  );
 
   const classifyResult = useShapeClassifier(
     state.csgGeometry,
@@ -21,13 +38,11 @@ export default function Home() {
     state.planeInteracted,
   );
 
-  // Dispatch REVEAL_LABEL when classifier produces a new key
   useEffect(() => {
     if (!classifyResult) return;
     dispatch({ type: "REVEAL_LABEL", payload: { label: classifyResult.label, key: classifyResult.key } });
   }, [classifyResult?.key]);
 
-  // Auto-dismiss connection moment after 4s
   useEffect(() => {
     if (!state.connectionVisible) return;
     if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
@@ -39,10 +54,20 @@ export default function Home() {
     };
   }, [state.connectionVisible]);
 
+  useEffect(() => {
+    reset();
+    rotationMaterial.opacity = 0;
+  }, [state.solidId]);
+
   const handleSolidChange = (id: SolidId) => {
     if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
     dispatch({ type: "SET_SOLID", payload: id });
   };
+
+  const rotationLabel =
+    state.rotationComplete && state.mode === "rotation"
+      ? ROTATION_LABELS[state.solidId]
+      : undefined;
 
   return (
     <div
@@ -65,9 +90,19 @@ export default function Home() {
           mode={state.mode}
           onInteract={() => dispatch({ type: "PLANE_INTERACTED" })}
           onShapeChange={(geo) => dispatch({ type: "SET_CSG_GEOMETRY", payload: geo.clone() })}
+          rotationAngle={rotationAngle}
+          rotationComplete={state.rotationComplete}
+          rotationGeometry={rotationGeometry}
         />
         {state.mode === "crossSection" && (
           <ShapeLabel result={classifyResult} connectionVisible={state.connectionVisible} />
+        )}
+        {state.mode === "rotation" && state.rotationComplete && (
+          <ShapeLabel
+            result={null}
+            connectionVisible={state.connectionVisible}
+            rotationLabel={rotationLabel}
+          />
         )}
         {state.mode === "rotation" && state.solidId !== "cube" && (
           <div
@@ -79,7 +114,7 @@ export default function Home() {
             }}
           >
             <button
-              onClick={() => {/* wired in Sub-pass B */}}
+              onClick={() => (state.rotationComplete ? reset() : start())}
               style={{
                 height: 36,
                 padding: "0 20px",
