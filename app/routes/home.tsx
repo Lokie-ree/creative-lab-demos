@@ -109,13 +109,20 @@ export default function Home() {
           <div
             style={{
               position: "absolute",
-              bottom: 80,
+              bottom: state.rotationComplete ? 128 : 80,
               left: "50%",
               transform: "translateX(-50%)",
             }}
           >
             <button
-              onClick={() => (state.rotationComplete ? reset() : start())}
+              onClick={() => {
+                if (state.rotationComplete) {
+                  reset();
+                  dispatch({ type: "RESET_ROTATION" });
+                } else {
+                  start();
+                }
+              }}
               style={{
                 height: 36,
                 padding: "0 20px",
