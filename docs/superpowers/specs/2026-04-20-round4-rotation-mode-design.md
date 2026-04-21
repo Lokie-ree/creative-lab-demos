@@ -89,10 +89,9 @@ export type DemoAction =
   | { type: "REVEAL_LABEL"; payload: { label: string; key: string } }
   | { type: "HIDE_LABEL" }
   | { type: "SET_ROTATION_ANGLE"; payload: number }
-  | { type: "COMPLETE_ROTATION" }
+  | { type: "COMPLETE_ROTATION" }   // sets rotationComplete + updates completedModes inline
   | { type: "RESET_ROTATION" }
-  | { type: "MARK_MODE_COMPLETE"; payload: { solidId: SolidId; mode: ModeId } }
-  | { type: "HIDE_CONNECTION" };
+  | { type: "HIDE_CONNECTION" };    // MARK_MODE_COMPLETE is NOT an action — handled inline
 ```
 
 **Reducer rules:**
@@ -110,7 +109,9 @@ case "REVEAL_LABEL": {
   let nextConnection = state.connectionVisible;
   if (nextShapes.size >= 2) {
     nextCompleted = new Set(state.completedModes).add(`${state.solidId}-crossSection`);
-    const bothDone = nextCompleted.has(`${state.solidId}-crossSection`) && nextCompleted.has(`${state.solidId}-rotation`);
+    // Note: crossSection key is always present in nextCompleted at this point.
+    // Only check rotation to determine bothDone.
+    const bothDone = nextCompleted.has(`${state.solidId}-rotation`);
     nextConnection = bothDone && state.solidId !== "cube" && !state.connectionDismissed;
   }
   return {
@@ -124,24 +125,25 @@ case "REVEAL_LABEL": {
 }
 ```
 
-`MARK_MODE_COMPLETE`:
+`COMPLETE_ROTATION`: **Handles the full rotation completion inline** — sets `rotationComplete: true`, adds `${solidId}-rotation` to `completedModes`, and checks for connection moment. Do NOT split this across two dispatches from `home.tsx` — React batches `useReducer` dispatches but the stale-state guard would read `rotationComplete: false` when `MARK_MODE_COMPLETE` runs in the same tick.
+
 ```ts
-case "MARK_MODE_COMPLETE": {
-  const { solidId, mode } = action.payload;
-  // Guard: crossSection requires >= 2 distinct shapes, rotation requires rotationComplete
-  if (mode === "crossSection" && state.distinctShapes.size < 2) return state;
-  if (mode === "rotation" && !state.rotationComplete) return state;
-  const next = new Set(state.completedModes).add(`${solidId}-${mode}`);
-  const bothDone =
-    next.has(`${solidId}-crossSection`) && next.has(`${solidId}-rotation`);
-  const showConnection = bothDone && solidId !== "cube" && !state.connectionDismissed;
-  return { ...state, completedModes: next, connectionVisible: showConnection };
+case "COMPLETE_ROTATION": {
+  const nextCompleted = new Set(state.completedModes).add(`${state.solidId}-rotation`);
+  const bothDone = nextCompleted.has(`${state.solidId}-crossSection`);
+  const showConnection = bothDone && state.solidId !== "cube" && !state.connectionDismissed;
+  return {
+    ...state,
+    rotationComplete: true,
+    completedModes: nextCompleted,
+    connectionVisible: showConnection,
+  };
 }
 ```
 
-`HIDE_CONNECTION`: sets `connectionVisible: false`, `connectionDismissed: true`.
+`MARK_MODE_COMPLETE` action is **removed from the spec** — its logic is handled inline in `REVEAL_LABEL` (crossSection) and `COMPLETE_ROTATION` (rotation). Do not add a `MARK_MODE_COMPLETE` case to the reducer.
 
-`COMPLETE_ROTATION`: sets `rotationComplete: true`. Does NOT auto-dispatch `MARK_MODE_COMPLETE` — that fires from `home.tsx` after `onComplete` callback.
+`HIDE_CONNECTION`: sets `connectionVisible: false`, `connectionDismissed: true`.
 
 ### Updated file: `app/routes/home.tsx`
 
@@ -302,7 +304,7 @@ Contents:
 ### Updated file: `app/routes/home.tsx` (Sub-pass B additions)
 
 - `const { angle: rotationAngle, geometry: rotationGeometry, isRotating, start, reset } = useSolidRotation(state.solidId, handleRotationComplete)` — destructure with aliases so prop names match `SolidScene`'s expectations
-- `handleRotationComplete`: dispatches `COMPLETE_ROTATION` then `MARK_MODE_COMPLETE({ solidId: state.solidId, mode: 'rotation' })`
+- `handleRotationComplete`: dispatches `COMPLETE_ROTATION` only — this single action handles `rotationComplete`, `completedModes`, and `connectionVisible` inline in the reducer
 - `useEffect` on `state.solidId`: calls `reset()` to sync `useSolidRotation` internal state on solid change
 - ROTATE button `onClick`: `state.rotationComplete ? reset() : start()`
 - `SolidScene` receives `rotationAngle={rotationAngle}`, `rotationComplete={state.rotationComplete}`, `rotationGeometry={rotationGeometry}`
