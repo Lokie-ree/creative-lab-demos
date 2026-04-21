@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
-import * as THREE from "three";
-import type { SolidId, ModeId } from "~/types";
+import { useReducer, useRef, useEffect } from "react";
+import type { SolidId } from "~/types";
+import { demoReducer, initialState } from "~/hooks/useDemoReducer";
 import { ModeBar } from "~/components/ModeBar";
 import { SolidScene } from "~/components/SolidScene";
 import { SolidSelector } from "~/components/SolidSelector";
@@ -12,48 +12,37 @@ export function meta() {
 }
 
 export default function Home() {
-  const [solidId, setSolidId] = useState<SolidId>("cone");
-  const [mode, setMode] = useState<ModeId>("crossSection");
-  const [csgGeometry, setCsgGeometry] = useState<THREE.BufferGeometry | null>(null);
-  const [planeInteracted, setPlaneInteracted] = useState(false);
-  const [connectionVisible, setConnectionVisible] = useState(false);
+  const [state, dispatch] = useReducer(demoReducer, initialState);
   const connectionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevKeyRef = useRef<string | null>(null);
 
+  const classifyResult = useShapeClassifier(
+    state.csgGeometry,
+    state.solidId,
+    state.planeInteracted,
+  );
+
+  // Dispatch REVEAL_LABEL when classifier produces a new key
   useEffect(() => {
+    if (!classifyResult) return;
+    dispatch({ type: "REVEAL_LABEL", payload: { label: classifyResult.label, key: classifyResult.key } });
+  }, [classifyResult?.key]);
+
+  // Auto-dismiss connection moment after 4s
+  useEffect(() => {
+    if (!state.connectionVisible) return;
+    if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
+    connectionTimerRef.current = setTimeout(() => {
+      dispatch({ type: "HIDE_CONNECTION" });
+    }, 4000);
     return () => {
       if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
     };
-  }, []);
+  }, [state.connectionVisible]);
 
-  const handleSolidChange = useCallback((id: SolidId) => {
+  const handleSolidChange = (id: SolidId) => {
     if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
-    prevKeyRef.current = null;
-    setSolidId(id);
-    setCsgGeometry(null);
-    setPlaneInteracted(false);
-    setConnectionVisible(false);
-  }, []);
-
-  const handleInteract = useCallback(() => {
-    setPlaneInteracted(true);
-  }, []);
-
-  const handleShapeChange = useCallback((geo: THREE.BufferGeometry) => {
-    setCsgGeometry(geo.clone()); // clone so reference changes and useMemo re-runs
-  }, []);
-
-  const classifyResult = useShapeClassifier(csgGeometry, solidId, planeInteracted);
-
-  // Show connection moment for 4s on first classify result per solid
-  useEffect(() => {
-    if (!classifyResult) return;
-    if (classifyResult.key === prevKeyRef.current) return;
-    prevKeyRef.current = classifyResult.key;
-    setConnectionVisible(true);
-    if (connectionTimerRef.current) clearTimeout(connectionTimerRef.current);
-    connectionTimerRef.current = setTimeout(() => setConnectionVisible(false), 4000);
-  }, [classifyResult?.key]);
+    dispatch({ type: "SET_SOLID", payload: id });
+  };
 
   return (
     <div
@@ -65,19 +54,50 @@ export default function Home() {
         background: "var(--color-ground)",
       }}
     >
-      <ModeBar mode={mode} onModeChange={setMode} />
+      <ModeBar
+        mode={state.mode}
+        onModeChange={(m) => dispatch({ type: "SET_MODE", payload: m })}
+        solidId={state.solidId}
+      />
       <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
         <SolidScene
-          solidId={solidId}
-          mode={mode}
-          onInteract={handleInteract}
-          onShapeChange={handleShapeChange}
+          solidId={state.solidId}
+          mode={state.mode}
+          onInteract={() => dispatch({ type: "PLANE_INTERACTED" })}
+          onShapeChange={(geo) => dispatch({ type: "SET_CSG_GEOMETRY", payload: geo.clone() })}
         />
-        {mode === "crossSection" && (
-          <ShapeLabel result={classifyResult} connectionVisible={connectionVisible} />
+        {state.mode === "crossSection" && (
+          <ShapeLabel result={classifyResult} connectionVisible={state.connectionVisible} />
+        )}
+        {state.mode === "rotation" && state.solidId !== "cube" && (
+          <div
+            style={{
+              position: "absolute",
+              bottom: 80,
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}
+          >
+            <button
+              onClick={() => {/* wired in Sub-pass B */}}
+              style={{
+                height: 36,
+                padding: "0 20px",
+                border: "1px solid var(--color-rule)",
+                background: "transparent",
+                color: "var(--color-amber)",
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: 12,
+                letterSpacing: "0.12em",
+                cursor: "pointer",
+              }}
+            >
+              {state.rotationComplete ? "RESET" : "ROTATE →"}
+            </button>
+          </div>
         )}
       </div>
-      <SolidSelector solidId={solidId} onSolidChange={handleSolidChange} />
+      <SolidSelector solidId={state.solidId} onSolidChange={handleSolidChange} />
     </div>
   );
 }
