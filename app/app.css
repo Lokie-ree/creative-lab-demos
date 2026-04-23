@@ -40,3 +40,16 @@ body {
   .mode-label-full  { display: none; }
   .mode-label-short { display: inline; }
 }
+
+@media (max-width: 520px) {
+  .solid-selector {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    height: 88px !important;
+  }
+
+  .canvas-wrapper {
+    flex: none !important;
+    height: calc(100dvh - 136px) !important;
+  }
+}

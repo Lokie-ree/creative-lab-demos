@@ -15,6 +15,7 @@ interface SolidSelectorProps {
 export function SolidSelector({ solidId, onSolidChange }: SolidSelectorProps) {
   return (
     <div
+      className="solid-selector"
       style={{
         height: 52,
         display: "flex",

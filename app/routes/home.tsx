@@ -85,7 +85,7 @@ export default function Home() {
         onModeChange={(m) => dispatch({ type: "SET_MODE", payload: m })}
         solidId={state.solidId}
       />
-      <div style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
+      <div className="canvas-wrapper" style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
         <SolidScene
           solidId={state.solidId}
           mode={state.mode}
