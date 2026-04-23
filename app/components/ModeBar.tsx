@@ -39,13 +39,15 @@ export function ModeBar({ mode, onModeChange, solidId }: ModeBarProps) {
           style={segmentStyle(mode === "crossSection")}
           onClick={() => onModeChange("crossSection")}
         >
-          Cross Section
+          <span className="mode-label-full">Cross Section</span>
+          <span className="mode-label-short">CS</span>
         </button>
         <button
           style={segmentStyle(mode === "rotation", rotationDisabled)}
           onClick={() => !rotationDisabled && onModeChange("rotation")}
         >
-          Rotation
+          <span className="mode-label-full">Rotation</span>
+          <span className="mode-label-short">ROT</span>
         </button>
         <button
           disabled

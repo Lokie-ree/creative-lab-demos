@@ -21,10 +21,6 @@
   box-sizing: border-box;
 }
 
-@media (max-width: 480px) {
-  .physics-btn { display: none; }
-}
-
 html,
 body {
   margin: 0;
@@ -34,4 +30,13 @@ body {
   color-scheme: dark;
   height: 100%;
   overflow: hidden;
+}
+
+/* Nav label abbreviation — keeps physics button visible at all widths */
+.mode-label-short { display: none; }
+.mode-label-full  { display: inline; }
+
+@media (max-width: 360px) {
+  .mode-label-full  { display: none; }
+  .mode-label-short { display: inline; }
 }
