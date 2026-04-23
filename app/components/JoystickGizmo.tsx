@@ -3,6 +3,7 @@ import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { Subtraction, type CSGGeometryRef } from "@react-three/csg";
 import * as THREE from "three";
 import gsap from "gsap";
+import { useReducedMotion } from "~/hooks/useReducedMotion";
 
 const SECTION_COLOR = 0xd4962a;
 const HEIGHT_SENSITIVITY = 0.01;
@@ -26,6 +27,7 @@ export function JoystickGizmo({
   onInteract,
   onShapeChange,
 }: JoystickGizmoProps) {
+  const prefersReducedMotion = useReducedMotion();
   const groupRef = useRef<THREE.Group>(null);
   const handleRef = useRef<THREE.Mesh>(null);
   const pulseTargetRef = useRef<THREE.Mesh>(null);
@@ -54,13 +56,14 @@ export function JoystickGizmo({
   useEffect(() => {
     const target = pulseTargetRef.current;
     if (!target) return;
+    if (prefersReducedMotion) return;
     gsap.set(target.scale, { x: 1, y: 1, z: 1 });
     const tween = gsap.to(target.scale, {
       x: 1.18, y: 1.18, z: 1.18,
       duration: 1, repeat: -1, yoyo: true, ease: "sine.inOut",
     });
     return () => { tween.kill(); };
-  }, []);
+  }, [prefersReducedMotion]);
 
   // Canvas-level drag handlers — reliable even when pointer leaves the sphere
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import type { ClassifyResult } from "~/hooks/useShapeClassifier";
 import type { ModeId } from "~/types";
+import { useReducedMotion } from "~/hooks/useReducedMotion";
 
 interface ShapeLabelProps {
   result: ClassifyResult | null;
@@ -12,6 +13,7 @@ interface ShapeLabelProps {
 }
 
 export function ShapeLabel({ result, connectionVisible, rotationLabel, mode, bottom = 68 }: ShapeLabelProps) {
+  const prefersReducedMotion = useReducedMotion();
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
 
@@ -20,23 +22,31 @@ export function ShapeLabel({ result, connectionVisible, rotationLabel, mode, bot
 
   useEffect(() => {
     if (!labelRef.current || !displayLabel) return;
+    if (prefersReducedMotion) {
+      gsap.set(labelRef.current, { opacity: 1, y: 0 });
+      return;
+    }
     const tween = gsap.fromTo(
       labelRef.current,
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
     );
     return () => { tween.kill(); };
-  }, [animKey]);
+  }, [animKey, prefersReducedMotion]);
 
   useEffect(() => {
     if (!connectionRef.current || !connectionVisible) return;
+    if (prefersReducedMotion) {
+      gsap.set(connectionRef.current, { opacity: 1, y: 0 });
+      return;
+    }
     const tween = gsap.fromTo(
       connectionRef.current,
       { opacity: 0, y: 6 },
       { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
     );
     return () => { tween.kill(); };
-  }, [connectionVisible]);
+  }, [connectionVisible, prefersReducedMotion]);
 
   if (!result && !rotationLabel) return null;
 

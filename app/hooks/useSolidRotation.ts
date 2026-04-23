@@ -3,8 +3,10 @@ import gsap from "gsap";
 import * as THREE from "three";
 import { SILHOUETTES } from "~/data/silhouettes";
 import type { SolidId } from "~/types";
+import { useReducedMotion } from "~/hooks/useReducedMotion";
 
 export function useSolidRotation(solidId: SolidId, onComplete: () => void) {
+  const prefersReducedMotion = useReducedMotion();
   const [angle, setAngle] = useState(0);
   const [isRotating, setIsRotating] = useState(false);
   const progressRef = useRef({ val: 0 });
@@ -13,6 +15,13 @@ export function useSolidRotation(solidId: SolidId, onComplete: () => void) {
     progressRef.current.val = 0;
     setAngle(0);
     setIsRotating(true);
+    if (prefersReducedMotion) {
+      progressRef.current.val = 360;
+      setAngle(360);
+      setIsRotating(false);
+      onComplete();
+      return;
+    }
     gsap.to(progressRef.current, {
       val: 360,
       duration: 1.8,
