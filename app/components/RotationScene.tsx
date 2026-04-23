@@ -64,7 +64,7 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry }: Ro
   if (solidId === "cube") return null;
 
   return (
-    <group>
+    <group position={[0, 0.5, 0]}>
       <primitive object={axisLine} />
       {silhouetteLine && (
         <primitive ref={silhouetteRef} object={silhouetteLine} />

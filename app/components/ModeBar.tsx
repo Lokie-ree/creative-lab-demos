@@ -7,7 +7,7 @@ interface ModeBarProps {
 }
 
 const segmentStyle = (active: boolean, disabled?: boolean): React.CSSProperties => ({
-  width: "50%",
+  flex: 1,
   height: "100%",
   border: "none",
   background: active ? "var(--color-surface-hi)" : "transparent",
@@ -33,7 +33,6 @@ export function ModeBar({ mode, onModeChange, solidId }: ModeBarProps) {
           alignItems: "stretch",
           background: "var(--color-surface)",
           borderBottom: "1px solid var(--color-rule)",
-          position: "relative",
         }}
       >
         <button
@@ -50,14 +49,13 @@ export function ModeBar({ mode, onModeChange, solidId }: ModeBarProps) {
         </button>
         <button
           disabled
+          className="physics-btn"
           style={{
-            position: "absolute",
-            right: 12,
-            top: "50%",
-            transform: "translateY(-50%)",
-            height: 28,
-            padding: "0 12px",
-            border: "1px solid var(--color-rule)",
+            flex: "0 0 auto",
+            height: "100%",
+            padding: "0 16px",
+            border: "none",
+            borderLeft: "1px solid var(--color-rule)",
             background: "transparent",
             fontFamily: "'DM Sans', sans-serif",
             fontSize: 11,

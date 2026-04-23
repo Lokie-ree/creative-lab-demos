@@ -96,20 +96,22 @@ export default function Home() {
           rotationGeometry={rotationGeometry}
         />
         {state.mode === "crossSection" && (
-          <ShapeLabel result={classifyResult} connectionVisible={state.connectionVisible} />
+          <ShapeLabel result={classifyResult} connectionVisible={state.connectionVisible} mode="crossSection" />
         )}
         {state.mode === "rotation" && state.rotationComplete && (
           <ShapeLabel
             result={null}
             connectionVisible={state.connectionVisible}
             rotationLabel={rotationLabel}
+            mode="rotation"
+            bottom={72}
           />
         )}
         {state.mode === "rotation" && state.solidId !== "cube" && (
           <div
             style={{
               position: "absolute",
-              bottom: state.rotationComplete ? 128 : 80,
+              bottom: 16,
               left: "50%",
               transform: "translateX(-50%)",
             }}
@@ -127,7 +129,7 @@ export default function Home() {
                 height: 36,
                 padding: "0 20px",
                 border: "1px solid var(--color-rule)",
-                background: "transparent",
+                background: "var(--color-surface)",
                 color: "var(--color-amber)",
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: 12,
