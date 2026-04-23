@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { CuttingGeometry } from "~/components/CuttingGeometry";
 import { RotationScene } from "~/components/RotationScene";
+import { useCameraReset } from "~/hooks/useCameraReset";
 import type { SolidId, ModeId } from "~/types";
 
 const GEOMETRIES = {
@@ -35,6 +36,7 @@ function SceneContent({
   rotationComplete,
   rotationGeometry,
 }: SceneContentProps) {
+  useCameraReset(solidId)
   const geometry = GEOMETRIES[solidId];
 
   const handleDragStart = () => {
