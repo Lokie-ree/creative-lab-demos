@@ -7,12 +7,13 @@ import { CuttingGeometry } from "~/components/CuttingGeometry";
 import { RotationScene } from "~/components/RotationScene";
 import { useCameraReset } from "~/hooks/useCameraReset";
 import type { SolidId, ModeId } from "~/types";
+import { SEGMENTS } from "~/data/segments";
 
 const GEOMETRIES = {
-  cone: new THREE.ConeGeometry(1.2, 3, 64, 1, false),
-  cylinder: new THREE.CylinderGeometry(1, 1, 3, 64, 1, false),
+  cone: new THREE.ConeGeometry(1.2, 3, SEGMENTS.cone, 1, false),
+  cylinder: new THREE.CylinderGeometry(1, 1, 3, SEGMENTS.cylinder, 1, false),
   cube: new THREE.BoxGeometry(2.2, 2.2, 2.2),
-  sphere: new THREE.SphereGeometry(1.3, 64, 32),
+  sphere: new THREE.SphereGeometry(1.3, SEGMENTS.sphere[0], SEGMENTS.sphere[1]),
 };
 
 interface SceneContentProps {
