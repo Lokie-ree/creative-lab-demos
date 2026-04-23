@@ -71,7 +71,7 @@ export default function Home() {
       : undefined;
 
   return (
-    <div
+    <main
       style={{
         display: "flex",
         flexDirection: "column",
@@ -143,6 +143,6 @@ export default function Home() {
         )}
       </div>
       <SolidSelector solidId={state.solidId} onSolidChange={handleSolidChange} />
-    </div>
+    </main>
   );
 }
