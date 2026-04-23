@@ -36,7 +36,7 @@ function SceneContent({
   rotationComplete,
   rotationGeometry,
 }: SceneContentProps) {
-  useCameraReset(solidId)
+  useCameraReset(solidId, orbitRef);
   const geometry = GEOMETRIES[solidId];
 
   const handleDragStart = () => {
