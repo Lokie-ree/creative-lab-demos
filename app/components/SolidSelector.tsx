@@ -31,13 +31,9 @@ export function SolidSelector({ solidId, onSolidChange }: SolidSelectorProps) {
           style={{
             flex: 1,
             height: "100%",
-            background: "transparent",
+            background: solidId === id ? "var(--color-surface-hi)" : "transparent",
             border: "none",
-            borderLeft:
-              solidId === id
-                ? "3px solid var(--color-amber)"
-                : "3px solid transparent",
-            color: solidId === id ? "var(--color-ink)" : "var(--color-muted)",
+            color: solidId === id ? "var(--color-amber)" : "var(--color-muted)",
             fontFamily: "'DM Sans', sans-serif",
             fontSize: 11,
             letterSpacing: "0.12em",
