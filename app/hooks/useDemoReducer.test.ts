@@ -48,6 +48,18 @@ describe("SET_MODE", () => {
     expect(next.rotationAngle).toBe(180);
     expect(next.rotationComplete).toBe(true);
   });
+
+  test("sets connectionDismissed when switching while connection is visible", () => {
+    const state: DemoState = { ...initialState, connectionVisible: true, connectionDismissed: false };
+    const next = demoReducer(state, { type: "SET_MODE", payload: "crossSection" });
+    expect(next.connectionDismissed).toBe(true);
+  });
+
+  test("preserves connectionDismissed when connection is not visible", () => {
+    const state: DemoState = { ...initialState, connectionVisible: false, connectionDismissed: false };
+    const next = demoReducer(state, { type: "SET_MODE", payload: "rotation" });
+    expect(next.connectionDismissed).toBe(false);
+  });
 });
 
 describe("REVEAL_LABEL", () => {

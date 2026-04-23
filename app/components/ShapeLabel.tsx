@@ -1,14 +1,17 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import type { ClassifyResult } from "~/hooks/useShapeClassifier";
+import type { ModeId } from "~/types";
 
 interface ShapeLabelProps {
   result: ClassifyResult | null;
   connectionVisible: boolean;
   rotationLabel?: string;
+  mode?: ModeId;
+  bottom?: number;
 }
 
-export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLabelProps) {
+export function ShapeLabel({ result, connectionVisible, rotationLabel, mode, bottom = 68 }: ShapeLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
 
@@ -38,14 +41,16 @@ export function ShapeLabel({ result, connectionVisible, rotationLabel }: ShapeLa
   if (!result && !rotationLabel) return null;
 
   const sentence = connectionVisible
-    ? "That cross section — it's the shape you started with."
+    ? mode === "rotation"
+      ? "Slice this solid — you'll find the shape you swept from."
+      : "That cross section — it's the shape you started with."
     : null;
 
   return (
     <div
       style={{
         position: "absolute",
-        bottom: 68,
+        bottom,
         left: 0,
         right: 0,
         display: "flex",

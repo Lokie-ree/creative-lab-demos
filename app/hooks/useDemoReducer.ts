@@ -49,7 +49,12 @@ export type DemoAction =
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   switch (action.type) {
     case "SET_MODE":
-      return { ...state, mode: action.payload, connectionVisible: false };
+      return {
+        ...state,
+        mode: action.payload,
+        connectionVisible: false,
+        connectionDismissed: state.connectionVisible ? true : state.connectionDismissed,
+      };
 
     case "SET_SOLID":
       return {
