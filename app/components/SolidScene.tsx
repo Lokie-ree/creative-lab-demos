@@ -3,8 +3,8 @@ import { OrbitControls } from "@react-three/drei";
 import { useRef } from "react";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { solidMaterial, wireframeMaterial } from "~/data/materials";
 import { CuttingGeometry } from "~/components/CuttingGeometry";
+import { RotationScene } from "~/components/RotationScene";
 import type { SolidId, ModeId } from "~/types";
 
 const GEOMETRIES = {
@@ -20,9 +20,21 @@ interface SceneContentProps {
   orbitRef: React.RefObject<OrbitControlsImpl | null>;
   onInteract?: () => void;
   onShapeChange?: (geo: THREE.BufferGeometry) => void;
+  rotationAngle: number;
+  rotationComplete: boolean;
+  rotationGeometry: THREE.BufferGeometry | null;
 }
 
-function SceneContent({ solidId, mode, orbitRef, onInteract, onShapeChange }: SceneContentProps) {
+function SceneContent({
+  solidId,
+  mode,
+  orbitRef,
+  onInteract,
+  onShapeChange,
+  rotationAngle,
+  rotationComplete,
+  rotationGeometry,
+}: SceneContentProps) {
   const geometry = GEOMETRIES[solidId];
 
   const handleDragStart = () => {
@@ -46,10 +58,12 @@ function SceneContent({ solidId, mode, orbitRef, onInteract, onShapeChange }: Sc
   }
 
   return (
-    <group>
-      <mesh geometry={geometry} material={solidMaterial} />
-      <mesh geometry={geometry} material={wireframeMaterial} />
-    </group>
+    <RotationScene
+      solidId={solidId}
+      angle={rotationAngle}
+      rotationComplete={rotationComplete}
+      geometry={rotationGeometry}
+    />
   );
 }
 
@@ -58,9 +72,20 @@ interface SolidSceneProps {
   mode: ModeId;
   onInteract?: () => void;
   onShapeChange?: (geo: THREE.BufferGeometry) => void;
+  rotationAngle?: number;
+  rotationComplete?: boolean;
+  rotationGeometry?: THREE.BufferGeometry | null;
 }
 
-export function SolidScene({ solidId, mode, onInteract, onShapeChange }: SolidSceneProps) {
+export function SolidScene({
+  solidId,
+  mode,
+  onInteract,
+  onShapeChange,
+  rotationAngle = 0,
+  rotationComplete = false,
+  rotationGeometry = null,
+}: SolidSceneProps) {
   const orbitRef = useRef<OrbitControlsImpl | null>(null);
 
   return (
@@ -82,7 +107,16 @@ export function SolidScene({ solidId, mode, onInteract, onShapeChange }: SolidSc
         minPolarAngle={Math.PI * 0.1}
         maxPolarAngle={Math.PI * 0.9}
       />
-      <SceneContent solidId={solidId} mode={mode} orbitRef={orbitRef} onInteract={onInteract} onShapeChange={onShapeChange} />
+      <SceneContent
+        solidId={solidId}
+        mode={mode}
+        orbitRef={orbitRef}
+        onInteract={onInteract}
+        onShapeChange={onShapeChange}
+        rotationAngle={rotationAngle}
+        rotationComplete={rotationComplete}
+        rotationGeometry={rotationGeometry}
+      />
     </Canvas>
   );
 }

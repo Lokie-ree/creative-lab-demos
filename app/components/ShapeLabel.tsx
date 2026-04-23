@@ -1,69 +1,56 @@
-// app/components/ShapeLabel.tsx
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import type { ClassifyResult } from "~/hooks/useShapeClassifier";
+import type { ModeId } from "~/types";
 
 interface ShapeLabelProps {
   result: ClassifyResult | null;
   connectionVisible: boolean;
+  rotationLabel?: string;
+  mode?: ModeId;
+  bottom?: number;
 }
 
-const CONNECTION_SENTENCES: Record<string, string> = {
-  "cone-circle": "A horizontal cut through a cone is always a circle.",
-  "cone-ellipse": "Tilt the cut and the circle stretches into an ellipse.",
-  "cone-triangle": "Cut through the apex and you get a triangle.",
-  "cone-parabola": "A cut parallel to the slant gives a parabola.",
-  "cone-point": "The apex itself is just a point.",
-  "cylinder-circle": "A flat cut through a cylinder is a circle.",
-  "cylinder-ellipse": "Tilt it and the circle becomes an ellipse.",
-  "cylinder-rectangle": "A side cut through a cylinder gives a rectangle.",
-  "cube-square": "A horizontal cut through a cube is a square.",
-  "cube-rectangle": "Cut off-axis and the square becomes a rectangle.",
-  "cube-hexagon": "Tilt at 45° and a cube reveals a hexagon.",
-  "cube-triangle": "A corner cut gives a triangle.",
-  "sphere-circle": "Every cross-section of a sphere is a circle.",
-};
-
-export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
+export function ShapeLabel({ result, connectionVisible, rotationLabel, mode, bottom = 68 }: ShapeLabelProps) {
   const labelRef = useRef<HTMLDivElement>(null);
   const connectionRef = useRef<HTMLDivElement>(null);
 
-  // Animate label in when shape changes
+  const displayLabel = rotationLabel ?? result?.label ?? null;
+  const animKey = rotationLabel ?? result?.key;
+
   useEffect(() => {
-    if (!labelRef.current) return;
+    if (!labelRef.current || !displayLabel) return;
     const tween = gsap.fromTo(
       labelRef.current,
       { opacity: 0, y: 10 },
       { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
     );
     return () => { tween.kill(); };
-  }, [result?.key]);
+  }, [animKey]);
 
-  // Animate connection sentence on visibility toggle
   useEffect(() => {
-    if (!connectionRef.current) return;
-    let tween: gsap.core.Tween;
-    if (connectionVisible) {
-      tween = gsap.fromTo(
-        connectionRef.current,
-        { opacity: 0, y: 6 },
-        { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" },
-      );
-    } else {
-      tween = gsap.to(connectionRef.current, { opacity: 0, duration: 0.3 });
-    }
+    if (!connectionRef.current || !connectionVisible) return;
+    const tween = gsap.fromTo(
+      connectionRef.current,
+      { opacity: 0, y: 6 },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" },
+    );
     return () => { tween.kill(); };
   }, [connectionVisible]);
 
-  if (!result) return null;
+  if (!result && !rotationLabel) return null;
 
-  const sentence = CONNECTION_SENTENCES[result.key] ?? null;
+  const sentence = connectionVisible
+    ? mode === "rotation"
+      ? "Slice this solid — you'll find the shape you swept from."
+      : "That cross section — it's the shape you started with."
+    : null;
 
   return (
     <div
       style={{
         position: "absolute",
-        bottom: 68,
+        bottom,
         left: 0,
         right: 0,
         display: "flex",
@@ -84,17 +71,17 @@ export function ShapeLabel({ result, connectionVisible }: ShapeLabelProps) {
           textTransform: "lowercase",
         }}
       >
-        {result.label}
+        {displayLabel}
       </div>
-      {/* opacity 0 is load-bearing — GSAP controls visibility from here */}
       {sentence && (
         <div
           ref={connectionRef}
           style={{
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: 13,
-            color: "var(--color-muted)",
-            letterSpacing: "0.03em",
+            fontFamily: "'Fraunces', serif",
+            fontStyle: "italic",
+            fontSize: 16,
+            color: "var(--color-amber)",
+            letterSpacing: "0.01em",
             opacity: 0,
           }}
         >

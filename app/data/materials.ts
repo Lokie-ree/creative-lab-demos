@@ -36,3 +36,12 @@ export const axisLineMaterial = new THREE.LineBasicMaterial({
   transparent: true,
   opacity: 0.5,
 });
+
+export const rotationMaterial = new THREE.MeshStandardMaterial({
+  color: 0x232018,
+  transparent: true,
+  opacity: 0,
+  roughness: 0.7,
+  metalness: 0.1,
+  side: THREE.FrontSide,
+});
