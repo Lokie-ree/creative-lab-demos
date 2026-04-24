@@ -17,6 +17,8 @@ export interface DemoState {
   completedModes: Set<`${SolidId}-${ModeId}`>;
   connectionVisible: boolean;
   connectionDismissed: boolean;
+  // Physics mode
+  physicsMode: boolean;
 }
 
 export const initialState: DemoState = {
@@ -32,6 +34,7 @@ export const initialState: DemoState = {
   completedModes: new Set(),
   connectionVisible: false,
   connectionDismissed: false,
+  physicsMode: false,
 };
 
 export type DemoAction =
@@ -44,7 +47,8 @@ export type DemoAction =
   | { type: "SET_ROTATION_ANGLE"; payload: number }
   | { type: "COMPLETE_ROTATION" }
   | { type: "RESET_ROTATION" }
-  | { type: "HIDE_CONNECTION" };
+  | { type: "HIDE_CONNECTION" }
+  | { type: "TOGGLE_PHYSICS" };
 
 export function demoReducer(state: DemoState, action: DemoAction): DemoState {
   switch (action.type) {
@@ -52,6 +56,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
       return {
         ...state,
         mode: action.payload,
+        physicsMode: false,
         connectionVisible: false,
         connectionDismissed: state.connectionVisible ? true : state.connectionDismissed,
       };
@@ -67,6 +72,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
         labelVisible: false,
         rotationAngle: 0,
         rotationComplete: false,
+        physicsMode: false,
         connectionVisible: false,
         connectionDismissed: false,
       };
@@ -119,6 +125,9 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
 
     case "HIDE_CONNECTION":
       return { ...state, connectionVisible: false, connectionDismissed: true };
+
+    case "TOGGLE_PHYSICS":
+      return { ...state, physicsMode: !state.physicsMode };
 
     default:
       return state;

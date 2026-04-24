@@ -171,3 +171,30 @@ describe("HIDE_CONNECTION", () => {
     expect(next.connectionDismissed).toBe(true);
   });
 });
+
+describe("TOGGLE_PHYSICS", () => {
+  test("flips physicsMode from false to true", () => {
+    const next = demoReducer(initialState, { type: "TOGGLE_PHYSICS" });
+    expect(next.physicsMode).toBe(true);
+  });
+
+  test("flips physicsMode from true to false", () => {
+    const on: DemoState = { ...initialState, physicsMode: true };
+    const next = demoReducer(on, { type: "TOGGLE_PHYSICS" });
+    expect(next.physicsMode).toBe(false);
+  });
+});
+
+describe("physicsMode reset on navigation", () => {
+  test("SET_SOLID resets physicsMode to false", () => {
+    const on: DemoState = { ...initialState, physicsMode: true };
+    const next = demoReducer(on, { type: "SET_SOLID", payload: "cylinder" });
+    expect(next.physicsMode).toBe(false);
+  });
+
+  test("SET_MODE resets physicsMode to false", () => {
+    const on: DemoState = { ...initialState, physicsMode: true };
+    const next = demoReducer(on, { type: "SET_MODE", payload: "rotation" });
+    expect(next.physicsMode).toBe(false);
+  });
+});
