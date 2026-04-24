@@ -65,6 +65,10 @@ export default function Home() {
     dispatch({ type: "SET_SOLID", payload: id });
   };
 
+  const handlePhysicsToggle = () => {
+    dispatch({ type: "TOGGLE_PHYSICS" });
+  };
+
   const rotationLabel =
     state.rotationComplete && state.mode === "rotation"
       ? ROTATION_LABELS[state.solidId]
@@ -84,6 +88,9 @@ export default function Home() {
         mode={state.mode}
         onModeChange={(m) => dispatch({ type: "SET_MODE", payload: m })}
         solidId={state.solidId}
+        physicsMode={state.physicsMode}
+        onPhysicsToggle={handlePhysicsToggle}
+        rotationComplete={state.rotationComplete}
       />
       <div className="canvas-wrapper" style={{ flex: 1, overflow: "hidden", minHeight: 0, position: "relative" }}>
         <SolidScene
@@ -94,6 +101,7 @@ export default function Home() {
           rotationAngle={rotationAngle}
           rotationComplete={state.rotationComplete}
           rotationGeometry={rotationGeometry}
+          physicsMode={state.physicsMode}
         />
         {state.mode === "crossSection" && (
           <ShapeLabel result={classifyResult} connectionVisible={state.connectionVisible} mode="crossSection" />
