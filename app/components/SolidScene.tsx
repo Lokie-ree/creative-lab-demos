@@ -1,6 +1,7 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { useRef } from "react";
+import { lazy, Suspense, useRef, useCallback } from "react";
+import gsap from "gsap";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { CuttingGeometry } from "~/components/CuttingGeometry";
@@ -8,6 +9,10 @@ import { RotationScene } from "~/components/RotationScene";
 import { useCameraReset } from "~/hooks/useCameraReset";
 import type { SolidId, ModeId } from "~/types";
 import { SEGMENTS } from "~/data/segments";
+
+const PhysicsSolid = lazy(() =>
+  import("~/components/PhysicsSolid").then((m) => ({ default: m.PhysicsSolid })),
+);
 
 const GEOMETRIES = {
   cone: new THREE.ConeGeometry(1.2, 3, SEGMENTS.cone, 1, false),
@@ -25,6 +30,7 @@ interface SceneContentProps {
   rotationAngle: number;
   rotationComplete: boolean;
   rotationGeometry: THREE.BufferGeometry | null;
+  physicsMode: boolean;
 }
 
 function SceneContent({
@@ -36,7 +42,25 @@ function SceneContent({
   rotationAngle,
   rotationComplete,
   rotationGeometry,
+  physicsMode,
 }: SceneContentProps) {
+  const planeYRef = useRef(0);
+  const flashPlaneRef = useRef<THREE.Mesh>(null);
+
+  const handleIntersectionEnter = useCallback(() => {
+    const mat = flashPlaneRef.current?.material as THREE.MeshBasicMaterial | null;
+    if (!mat) return;
+    gsap.killTweensOf(mat);
+    gsap.to(mat, { opacity: 0.45, duration: 0.1 });
+  }, []);
+
+  const handleIntersectionExit = useCallback(() => {
+    const mat = flashPlaneRef.current?.material as THREE.MeshBasicMaterial | null;
+    if (!mat) return;
+    gsap.killTweensOf(mat);
+    gsap.to(mat, { opacity: 0, duration: 0.3 });
+  }, []);
+
   useCameraReset(solidId, orbitRef);
   const geometry = GEOMETRIES[solidId];
 
@@ -49,24 +73,66 @@ function SceneContent({
 
   if (mode === "crossSection") {
     return (
-      <CuttingGeometry
-        key={solidId}
-        solidGeometry={geometry}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onInteract={onInteract}
-        onShapeChange={onShapeChange}
-      />
+      <>
+        <CuttingGeometry
+          key={solidId}
+          solidGeometry={geometry}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onInteract={onInteract}
+          onShapeChange={onShapeChange}
+          onHeightChange={(y) => { planeYRef.current = y; }}
+          physicsActive={physicsMode}
+        />
+        {physicsMode && (
+          <>
+            <mesh
+              ref={flashPlaneRef}
+              position={[0, planeYRef.current, 0]}
+              renderOrder={1}
+            >
+              <planeGeometry args={[4, 4]} />
+              <meshBasicMaterial
+                color={0xd4962a}
+                transparent
+                opacity={0}
+                side={THREE.DoubleSide}
+                depthWrite={false}
+              />
+            </mesh>
+            <Suspense fallback={null}>
+              <PhysicsSolid
+                mode="crossSection"
+                geometry={geometry}
+                planeY={planeYRef.current}
+                onIntersectionEnter={handleIntersectionEnter}
+                onIntersectionExit={handleIntersectionExit}
+              />
+            </Suspense>
+          </>
+        )}
+      </>
     );
   }
 
   return (
-    <RotationScene
-      solidId={solidId}
-      angle={rotationAngle}
-      rotationComplete={rotationComplete}
-      geometry={rotationGeometry}
-    />
+    <>
+      <RotationScene
+        solidId={solidId}
+        angle={rotationAngle}
+        rotationComplete={rotationComplete}
+        geometry={physicsMode ? null : rotationGeometry}
+      />
+      {physicsMode && rotationComplete && rotationGeometry && (
+        <Suspense fallback={null}>
+          <PhysicsSolid
+            mode="rotation"
+            geometry={rotationGeometry}
+            initialPosition={[0, 0.5, 0]}
+          />
+        </Suspense>
+      )}
+    </>
   );
 }
 
@@ -78,6 +144,7 @@ interface SolidSceneProps {
   rotationAngle?: number;
   rotationComplete?: boolean;
   rotationGeometry?: THREE.BufferGeometry | null;
+  physicsMode?: boolean;
 }
 
 export function SolidScene({
@@ -88,6 +155,7 @@ export function SolidScene({
   rotationAngle = 0,
   rotationComplete = false,
   rotationGeometry = null,
+  physicsMode = false,
 }: SolidSceneProps) {
   const orbitRef = useRef<OrbitControlsImpl | null>(null);
 
@@ -102,6 +170,7 @@ export function SolidScene({
       <pointLight position={[-3, 4, -3]} intensity={0.4} color={0xd4962a} />
       <OrbitControls
         ref={orbitRef}
+        enabled={!physicsMode}
         enablePan={false}
         minDistance={4}
         maxDistance={12}
@@ -119,6 +188,7 @@ export function SolidScene({
         rotationAngle={rotationAngle}
         rotationComplete={rotationComplete}
         rotationGeometry={rotationGeometry}
+        physicsMode={physicsMode}
       />
     </Canvas>
   );
