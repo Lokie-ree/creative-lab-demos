@@ -41,6 +41,18 @@ body {
   .mode-label-short { display: inline; }
 }
 
+/* Physics button label — shown at all widths except ≤360px */
+.physics-btn-label { display: inline; }
+
+@media (max-width: 360px) {
+  .physics-btn-label { display: none; }
+}
+
+/* Physics is motion-heavy — hide the button entirely for reduced-motion users */
+@media (prefers-reduced-motion: reduce) {
+  .physics-btn { display: none; }
+}
+
 @media (max-width: 520px) {
   .solid-selector {
     display: grid !important;
