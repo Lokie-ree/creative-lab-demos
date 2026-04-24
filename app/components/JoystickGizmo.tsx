@@ -17,6 +17,8 @@ export interface JoystickGizmoProps {
   onDragEnd?: () => void;
   onInteract?: () => void;
   onShapeChange?: (geo: THREE.BufferGeometry) => void;
+  physicsActive?: boolean;
+  onHeightChange?: (y: number) => void;
 }
 
 export function JoystickGizmo({
@@ -26,6 +28,8 @@ export function JoystickGizmo({
   onDragEnd,
   onInteract,
   onShapeChange,
+  physicsActive,
+  onHeightChange,
 }: JoystickGizmoProps) {
   const prefersReducedMotion = useReducedMotion();
   const groupRef = useRef<THREE.Group>(null);
@@ -83,6 +87,7 @@ export function JoystickGizmo({
         solidBoundsY.current.min,
         Math.min(solidBoundsY.current.max, targetY),
       );
+      onHeightChange?.(heightRef.current);
 
       // Tilt: accumulate as world-space quaternion via premultiply.
       // premultiply(dq) = dq * q, which gives "old rotation first, then dq in world space".
@@ -144,13 +149,13 @@ export function JoystickGizmo({
       </Subtraction>
 
       {/* Stem */}
-      <mesh position={[0, -0.4, 0]}>
+      <mesh position={[0, -0.4, 0]} visible={!physicsActive}>
         <cylinderGeometry args={[0.025, 0.025, 0.8, 8]} />
         <meshBasicMaterial color={SECTION_COLOR} transparent opacity={0.25} />
       </mesh>
 
       {/* Handle — pulseTargetRef outer mesh for GSAP scale; handleRef inner mesh for pointer events */}
-      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]}>
+      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]} visible={!physicsActive}>
         <mesh
           ref={handleRef}
           onPointerDown={(e: ThreeEvent<PointerEvent>) => {

@@ -10,6 +10,8 @@ interface CuttingGeometryProps {
   onDragStart?: () => void;
   onDragEnd?: () => void;
   onInteract?: () => void;
+  physicsActive?: boolean;
+  onHeightChange?: (y: number) => void;
 }
 
 const SOLID_COLOR = 0x232018;
@@ -21,6 +23,8 @@ export function CuttingGeometry({
   onDragStart,
   onDragEnd,
   onInteract,
+  physicsActive,
+  onHeightChange,
 }: CuttingGeometryProps) {
   const csg = useRef<CSGGeometryRef>(null);
   const meshRef = useRef<THREE.Mesh>(null);
@@ -60,6 +64,8 @@ export function CuttingGeometry({
           onDragEnd={onDragEnd}
           onInteract={onInteract}
           onShapeChange={onShapeChange}
+          physicsActive={physicsActive}
+          onHeightChange={onHeightChange}
         />
       </Geometry>
       <mesh geometry={solidGeometry} material={wireframeMaterial} />
