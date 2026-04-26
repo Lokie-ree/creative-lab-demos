@@ -11,9 +11,10 @@ interface RotationSceneProps {
   angle: number;
   rotationComplete: boolean;
   geometry: THREE.BufferGeometry | null;
+  physicsMode?: boolean;
 }
 
-export function RotationScene({ solidId, angle, rotationComplete, geometry }: RotationSceneProps) {
+export function RotationScene({ solidId, angle, rotationComplete, geometry, physicsMode }: RotationSceneProps) {
   const silhouetteRef = useRef<THREE.Line>(null);
   const lightRef = useRef<THREE.PointLight>(null);
 
@@ -65,11 +66,11 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry }: Ro
 
   return (
     <group position={[0, 0.5, 0]}>
-      <primitive object={axisLine} />
+      <primitive object={axisLine} visible={!physicsMode} />
       {silhouetteLine && (
-        <primitive ref={silhouetteRef} object={silhouetteLine} />
+        <primitive ref={silhouetteRef} object={silhouetteLine} visible={!physicsMode} />
       )}
-      {geometry && (
+      {geometry && !physicsMode && (
         <>
           <mesh geometry={geometry} material={rotationMaterial} />
           <mesh geometry={geometry} material={wireframeMaterial} />

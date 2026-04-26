@@ -1,4 +1,5 @@
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
@@ -6,107 +7,105 @@ import * as THREE from "three";
 interface PhysicsSolidProps {
   mode: "crossSection" | "rotation";
   geometry: THREE.BufferGeometry;
-  planeY?: number;
+  planeYRef?: { current: number };
   onIntersectionEnter?: () => void;
   onIntersectionExit?: () => void;
   initialPosition?: [number, number, number];
 }
 
 const FLOOR_Y = -3;
-const SENSOR_HALF_HEIGHT = 0.05;
-const SENSOR_HALF_WIDTH = 2;
-const DEBOUNCE_MS = 200;
 
-export function PhysicsSolid({
+function PhysicsInner({
   mode,
   geometry,
-  planeY = 0,
+  planeYRef,
   onIntersectionEnter,
   onIntersectionExit,
   initialPosition = [0, 0, 0],
 }: PhysicsSolidProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
+  const planeBodyRef = useRef<RapierRigidBody>(null);
   const torqueFiredRef = useRef(false);
-  const lastIntersectionMs = useRef(0);
 
-  useEffect(() => {
-    if (mode !== "rotation" || torqueFiredRef.current) return;
-    torqueFiredRef.current = true;
-    rigidBodyRef.current?.applyTorqueImpulse({ x: 0, y: 8, z: 0 }, true);
-  }, [mode]);
+  useFrame(() => {
+    const rb = rigidBodyRef.current;
+    if (!rb) return;
 
-  // Reset position/rotation on unmount. React unmounts children before parents,
-  // so this fires while the parent <Physics> world is still alive.
-  useEffect(() => {
-    return () => {
-      try {
-        rigidBodyRef.current?.setTranslation(
-          { x: initialPosition[0], y: initialPosition[1], z: initialPosition[2] },
-          true,
-        );
-        rigidBodyRef.current?.setRotation({ x: 0, y: 0, z: 0, w: 1 }, true);
-      } catch (_) {
-        // Rapier world may already be torn down
-      }
-    };
-  }, [initialPosition]);
+    // Defer initial torque to first frame so the RigidBody is guaranteed ready
+    if (mode === "rotation" && !torqueFiredRef.current) {
+      torqueFiredRef.current = true;
+      rb.applyTorqueImpulse({ x: 3, y: 1, z: 5 }, true);
+    }
+
+    // Keep kinematic plane collider in sync with joystick each frame
+    if (mode === "crossSection" && planeBodyRef.current && planeYRef) {
+      planeBodyRef.current.setNextKinematicTranslation({ x: 0, y: planeYRef.current, z: 0 });
+    }
+  });
 
   const handleClick = () => {
-    rigidBodyRef.current?.applyImpulse(
-      { x: (Math.random() - 0.5) * 4, y: 10, z: (Math.random() - 0.5) * 4 },
-      true,
-    );
-    if (mode === "rotation") {
-      rigidBodyRef.current?.applyTorqueImpulse({ x: 0, y: 6, z: 0 }, true);
+    const rb = rigidBodyRef.current;
+    if (!rb) return;
+    if (mode === "crossSection") {
+      // Normalize by mass so all shapes launch to the same height (~3 units)
+      rb.applyImpulse({ x: 0, y: rb.mass() * 8, z: 0 }, true);
+    } else {
+      rb.applyTorqueImpulse(
+        { x: (Math.random() - 0.5) * 8, y: 2, z: (Math.random() - 0.5) * 8 },
+        true,
+      );
     }
   };
 
-  const handleIntersectionEnter = () => {
-    const now = Date.now();
-    if (now - lastIntersectionMs.current < DEBOUNCE_MS) return;
-    lastIntersectionMs.current = now;
-    onIntersectionEnter?.();
-  };
-
-  const handleIntersectionExit = () => {
-    const now = Date.now();
-    if (now - lastIntersectionMs.current < DEBOUNCE_MS) return;
-    lastIntersectionMs.current = now;
-    onIntersectionExit?.();
-  };
-
   return (
-    <Physics gravity={[0, -9.81, 0]}>
+    <>
       <RigidBody
         ref={rigidBodyRef}
         type="dynamic"
         colliders="hull"
-        restitution={0.6}
-        angularDamping={mode === "rotation" ? 1.5 : 0.1}
+        restitution={0.85}
+        friction={0.1}
+        lockRotations={mode === "crossSection"}
+        angularDamping={mode === "rotation" ? 0.2 : 0.1}
         position={initialPosition}
       >
         <mesh geometry={geometry} onClick={handleClick}>
           <meshStandardMaterial
-            color={0x232018}
+            color={0xb8924e}
             transparent
             opacity={0.85}
-            roughness={0.7}
-            metalness={0.1}
+            roughness={0.4}
+            metalness={0.3}
+            emissive={new THREE.Color(0x3a2e1a)}
+            emissiveIntensity={0.4}
           />
         </mesh>
       </RigidBody>
 
-      <CuboidCollider position={[0, FLOOR_Y, 0]} args={[20, 0.5, 20]} />
-
       {mode === "crossSection" && (
-        <CuboidCollider
-          sensor
-          args={[SENSOR_HALF_WIDTH, SENSOR_HALF_HEIGHT, SENSOR_HALF_WIDTH]}
-          position={[0, planeY, 0]}
-          onIntersectionEnter={handleIntersectionEnter}
-          onIntersectionExit={handleIntersectionExit}
-        />
+        <>
+          {/* Kinematic plane — solid bounces here; collision events drive the flash disc */}
+          <RigidBody
+            ref={planeBodyRef}
+            type="kinematicPosition"
+            colliders={false}
+            position={[0, planeYRef?.current ?? 0, 0]}
+            onCollisionEnter={onIntersectionEnter}
+            onCollisionExit={onIntersectionExit}
+          >
+            <CuboidCollider args={[10, 0.05, 10]} restitution={0.85} friction={0} />
+          </RigidBody>
+          <CuboidCollider position={[0, FLOOR_Y, 0]} args={[20, 0.5, 20]} />
+        </>
       )}
+    </>
+  );
+}
+
+export function PhysicsSolid(props: PhysicsSolidProps) {
+  return (
+    <Physics gravity={props.mode === "rotation" ? [0, 0, 0] : [0, -9.81, 0]}>
+      <PhysicsInner {...props} />
     </Physics>
   );
 }

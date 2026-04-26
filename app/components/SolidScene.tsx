@@ -1,4 +1,4 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { lazy, Suspense, useRef, useCallback } from "react";
 import gsap from "gsap";
@@ -20,6 +20,10 @@ const GEOMETRIES = {
   cube: new THREE.BoxGeometry(2.2, 2.2, 2.2),
   sphere: new THREE.SphereGeometry(1.3, SEGMENTS.sphere[0], SEGMENTS.sphere[1]),
 };
+
+// Spawn physics solid above the cone top (Y=1.5) so it doesn't immediately
+// intersect the default sensor plane at Y=0.
+const CROSS_SECTION_PHYSICS_INIT: [number, number, number] = [0, 3, 0];
 
 interface SceneContentProps {
   solidId: SolidId;
@@ -51,15 +55,25 @@ function SceneContent({
     const mat = flashPlaneRef.current?.material as THREE.MeshBasicMaterial | null;
     if (!mat) return;
     gsap.killTweensOf(mat);
-    gsap.to(mat, { opacity: 0.45, duration: 0.1 });
+    // Flash up then always auto-fade — exit event may never fire if solid rests below plane
+    gsap.timeline()
+      .to(mat, { opacity: 0.45, duration: 0.1 })
+      .to(mat, { opacity: 0, duration: 0.5 });
   }, []);
 
   const handleIntersectionExit = useCallback(() => {
     const mat = flashPlaneRef.current?.material as THREE.MeshBasicMaterial | null;
     if (!mat) return;
+    // Solid bounced back above plane — cut the auto-fade and fade faster
     gsap.killTweensOf(mat);
     gsap.to(mat, { opacity: 0, duration: 0.3 });
   }, []);
+
+  useFrame(() => {
+    if (flashPlaneRef.current) {
+      flashPlaneRef.current.position.y = planeYRef.current;
+    }
+  });
 
   useCameraReset(solidId, orbitRef);
   const geometry = GEOMETRIES[solidId];
@@ -88,10 +102,9 @@ function SceneContent({
           <>
             <mesh
               ref={flashPlaneRef}
-              position={[0, planeYRef.current, 0]}
               renderOrder={1}
             >
-              <planeGeometry args={[4, 4]} />
+              <circleGeometry args={[2, 48]} />
               <meshBasicMaterial
                 color={0xd4962a}
                 transparent
@@ -104,7 +117,8 @@ function SceneContent({
               <PhysicsSolid
                 mode="crossSection"
                 geometry={geometry}
-                planeY={planeYRef.current}
+                planeYRef={planeYRef}
+                initialPosition={CROSS_SECTION_PHYSICS_INIT}
                 onIntersectionEnter={handleIntersectionEnter}
                 onIntersectionExit={handleIntersectionExit}
               />
@@ -121,7 +135,8 @@ function SceneContent({
         solidId={solidId}
         angle={rotationAngle}
         rotationComplete={rotationComplete}
-        geometry={physicsMode ? null : rotationGeometry}
+        geometry={rotationGeometry}
+        physicsMode={physicsMode}
       />
       {physicsMode && rotationComplete && rotationGeometry && (
         <Suspense fallback={null}>

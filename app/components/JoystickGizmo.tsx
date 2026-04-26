@@ -149,13 +149,13 @@ export function JoystickGizmo({
       </Subtraction>
 
       {/* Stem */}
-      <mesh position={[0, -0.4, 0]} visible={!physicsActive}>
+      <mesh position={[0, -0.4, 0]}>
         <cylinderGeometry args={[0.025, 0.025, 0.8, 8]} />
         <meshBasicMaterial color={SECTION_COLOR} transparent opacity={0.25} />
       </mesh>
 
       {/* Handle — pulseTargetRef outer mesh for GSAP scale; handleRef inner mesh for pointer events */}
-      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]} visible={!physicsActive}>
+      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]}>
         <mesh
           ref={handleRef}
           onPointerDown={(e: ThreeEvent<PointerEvent>) => {
