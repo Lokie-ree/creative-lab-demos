@@ -52,7 +52,11 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry, phys
   });
 
   useEffect(() => {
-    if (!rotationComplete) return;
+    if (!rotationComplete) {
+      gsap.killTweensOf(silhouetteMaterial);
+      silhouetteMaterial.opacity = 0.75;
+      return;
+    }
     if (silhouetteRef.current) {
       gsap.to((silhouetteRef.current as any).material, { opacity: 0, duration: 0.4 });
     }
