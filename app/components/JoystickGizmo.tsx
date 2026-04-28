@@ -18,7 +18,7 @@ export interface JoystickGizmoProps {
   onInteract?: () => void;
   onShapeChange?: (geo: THREE.BufferGeometry) => void;
   physicsActive?: boolean;
-  onHeightChange?: (y: number) => void;
+  onPlaneTransformChange?: (transform: { position: THREE.Vector3; quaternion: THREE.Quaternion }) => void;
 }
 
 export function JoystickGizmo({
@@ -29,7 +29,7 @@ export function JoystickGizmo({
   onInteract,
   onShapeChange,
   physicsActive,
-  onHeightChange,
+  onPlaneTransformChange,
 }: JoystickGizmoProps) {
   const prefersReducedMotion = useReducedMotion();
   const groupRef = useRef<THREE.Group>(null);
@@ -47,6 +47,10 @@ export function JoystickGizmo({
   // Matrix is always rebuilt as T(height) × R(tiltQuat) — group origin = cutting plane position.
   const heightRef = useRef(0);
   const tiltQuatRef = useRef(new THREE.Quaternion());
+  const emittedTransformRef = useRef({
+    position: new THREE.Vector3(),
+    quaternion: new THREE.Quaternion(),
+  });
 
   // Compute solid Y bounds on solid change
   useEffect(() => {
@@ -69,6 +73,12 @@ export function JoystickGizmo({
     return () => { tween.kill(); };
   }, [prefersReducedMotion]);
 
+  // Seed parent ref once at mount with initial (zero, identity) transform
+  useEffect(() => {
+    onPlaneTransformChange?.(emittedTransformRef.current);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Canvas-level drag handlers — reliable even when pointer leaves the sphere
   useEffect(() => {
     const canvas = gl.domElement;
@@ -87,7 +97,6 @@ export function JoystickGizmo({
         solidBoundsY.current.min,
         Math.min(solidBoundsY.current.max, targetY),
       );
-      onHeightChange?.(heightRef.current);
 
       // Tilt: accumulate as world-space quaternion via premultiply.
       // premultiply(dq) = dq * q, which gives "old rotation first, then dq in world space".
@@ -108,6 +117,10 @@ export function JoystickGizmo({
       groupRef.current.matrixAutoUpdate = false;
       groupRef.current.updateMatrixWorld(true);
       csgRef.current.update();
+
+      emittedTransformRef.current.position.set(0, heightRef.current, 0);
+      emittedTransformRef.current.quaternion.copy(tiltQuatRef.current);
+      onPlaneTransformChange?.(emittedTransformRef.current);
 
       if (!hasInteracted.current && (Math.abs(dx) > 0 || Math.abs(dy) > 0)) {
         hasInteracted.current = true;
@@ -149,16 +162,17 @@ export function JoystickGizmo({
       </Subtraction>
 
       {/* Stem */}
-      <mesh position={[0, -0.4, 0]}>
+      <mesh position={[0, -0.4, 0]} visible={!physicsActive}>
         <cylinderGeometry args={[0.025, 0.025, 0.8, 8]} />
         <meshBasicMaterial color={SECTION_COLOR} transparent opacity={0.25} />
       </mesh>
 
       {/* Handle — pulseTargetRef outer mesh for GSAP scale; handleRef inner mesh for pointer events */}
-      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]}>
+      <mesh ref={pulseTargetRef} position={[0, -0.8, 0]} visible={!physicsActive}>
         <mesh
           ref={handleRef}
           onPointerDown={(e: ThreeEvent<PointerEvent>) => {
+            if (physicsActive) return;
             e.stopPropagation();
             isDragging.current = true;
             prevClientX.current = e.clientX;

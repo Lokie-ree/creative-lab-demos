@@ -7,7 +7,7 @@ import * as THREE from "three";
 interface PhysicsSolidProps {
   mode: "crossSection" | "rotation";
   geometry: THREE.BufferGeometry;
-  planeYRef?: { current: number };
+  planeTransformRef?: { current: { position: THREE.Vector3; quaternion: THREE.Quaternion } };
   onIntersectionEnter?: () => void;
   onIntersectionExit?: () => void;
   initialPosition?: [number, number, number];
@@ -18,7 +18,7 @@ const FLOOR_Y = -3;
 function PhysicsInner({
   mode,
   geometry,
-  planeYRef,
+  planeTransformRef,
   onIntersectionEnter,
   onIntersectionExit,
   initialPosition = [0, 0, 0],
@@ -38,8 +38,11 @@ function PhysicsInner({
     }
 
     // Keep kinematic plane collider in sync with joystick each frame
-    if (mode === "crossSection" && planeBodyRef.current && planeYRef) {
-      planeBodyRef.current.setNextKinematicTranslation({ x: 0, y: planeYRef.current, z: 0 });
+    if (mode === "crossSection" && planeBodyRef.current && planeTransformRef) {
+      const { position, quaternion } = planeTransformRef.current;
+      planeBodyRef.current.setNextKinematicTranslation(position);
+      // THREE.Quaternion has { x, y, z, w } — matches Rapier's expected shape directly
+      planeBodyRef.current.setNextKinematicRotation(quaternion);
     }
   });
 
@@ -89,7 +92,7 @@ function PhysicsInner({
             ref={planeBodyRef}
             type="kinematicPosition"
             colliders={false}
-            position={[0, planeYRef?.current ?? 0, 0]}
+            position={[0, 0, 0]}
             onCollisionEnter={onIntersectionEnter}
             onCollisionExit={onIntersectionExit}
           >

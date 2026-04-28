@@ -11,7 +11,7 @@ interface CuttingGeometryProps {
   onDragEnd?: () => void;
   onInteract?: () => void;
   physicsActive?: boolean;
-  onHeightChange?: (y: number) => void;
+  onPlaneTransformChange?: (transform: { position: THREE.Vector3; quaternion: THREE.Quaternion }) => void;
 }
 
 const SOLID_COLOR = 0x232018;
@@ -24,10 +24,19 @@ export function CuttingGeometry({
   onDragEnd,
   onInteract,
   physicsActive,
-  onHeightChange,
+  onPlaneTransformChange,
 }: CuttingGeometryProps) {
   const csg = useRef<CSGGeometryRef>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || !Array.isArray(mesh.material)) return;
+    const opacity = physicsActive ? 0 : 0.85;
+    (mesh.material as THREE.MeshStandardMaterial[]).forEach((mat) => {
+      mat.opacity = opacity;
+    });
+  }, [physicsActive]);
 
   // Safety net: if the CSG library's material-assignment path fails in R3F v9,
   // force a 2-entry array so groups with materialIndex 0/1 always resolve correctly.
@@ -65,10 +74,10 @@ export function CuttingGeometry({
           onInteract={onInteract}
           onShapeChange={onShapeChange}
           physicsActive={physicsActive}
-          onHeightChange={onHeightChange}
+          onPlaneTransformChange={onPlaneTransformChange}
         />
       </Geometry>
-      <mesh geometry={solidGeometry} material={wireframeMaterial} />
+      <mesh geometry={solidGeometry} material={wireframeMaterial} visible={!physicsActive} />
     </mesh>
   );
 }
