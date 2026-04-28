@@ -121,7 +121,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     }
 
     case "RESET_ROTATION":
-      return { ...state, rotationAngle: 0, rotationComplete: false };
+      return { ...state, rotationAngle: 0, rotationComplete: false, physicsMode: false };
 
     case "HIDE_CONNECTION":
       return { ...state, connectionVisible: false, connectionDismissed: true };
