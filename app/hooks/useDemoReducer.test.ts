@@ -198,3 +198,18 @@ describe("physicsMode reset on navigation", () => {
     expect(next.physicsMode).toBe(false);
   });
 });
+
+describe("RESET_ROTATION", () => {
+  test("resets physicsMode to false", () => {
+    const state: DemoState = {
+      ...initialState,
+      rotationAngle: 180,
+      rotationComplete: true,
+      physicsMode: true,
+    };
+    const next = demoReducer(state, { type: "RESET_ROTATION" });
+    expect(next.rotationAngle).toBe(0);
+    expect(next.rotationComplete).toBe(false);
+    expect(next.physicsMode).toBe(false);
+  });
+});

@@ -1,6 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
-import { lazy, Suspense, useRef, useCallback } from "react";
+import { lazy, Suspense, useRef, useCallback, useMemo } from "react";
 import gsap from "gsap";
 import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -48,7 +48,10 @@ function SceneContent({
   rotationGeometry,
   physicsMode,
 }: SceneContentProps) {
-  const planeYRef = useRef(0);
+  const planeTransformRef = useRef({
+    position: new THREE.Vector3(),
+    quaternion: new THREE.Quaternion(),
+  });
   const flashPlaneRef = useRef<THREE.Mesh>(null);
 
   const handleIntersectionEnter = useCallback(() => {
@@ -69,9 +72,24 @@ function SceneContent({
     gsap.to(mat, { opacity: 0, duration: 0.3 });
   }, []);
 
+  const handlePlaneTransformChange = useCallback(
+    (t: { position: THREE.Vector3; quaternion: THREE.Quaternion }) => {
+      planeTransformRef.current.position.copy(t.position);
+      planeTransformRef.current.quaternion.copy(t.quaternion);
+    },
+    [],
+  );
+
+  const flashPlaneGeometry = useMemo(() => {
+    const geo = new THREE.CircleGeometry(2, 48);
+    geo.rotateX(-Math.PI / 2);
+    return geo;
+  }, []);
+
   useFrame(() => {
     if (flashPlaneRef.current) {
-      flashPlaneRef.current.position.y = planeYRef.current;
+      flashPlaneRef.current.position.copy(planeTransformRef.current.position);
+      flashPlaneRef.current.quaternion.copy(planeTransformRef.current.quaternion);
     }
   });
 
@@ -95,16 +113,12 @@ function SceneContent({
           onDragEnd={handleDragEnd}
           onInteract={onInteract}
           onShapeChange={onShapeChange}
-          onHeightChange={(y) => { planeYRef.current = y; }}
+          onPlaneTransformChange={handlePlaneTransformChange}
           physicsActive={physicsMode}
         />
         {physicsMode && (
           <>
-            <mesh
-              ref={flashPlaneRef}
-              renderOrder={1}
-            >
-              <circleGeometry args={[2, 48]} />
+            <mesh ref={flashPlaneRef} geometry={flashPlaneGeometry} renderOrder={1}>
               <meshBasicMaterial
                 color={0xd4962a}
                 transparent
@@ -117,10 +131,11 @@ function SceneContent({
               <PhysicsSolid
                 mode="crossSection"
                 geometry={geometry}
-                planeYRef={planeYRef}
+                planeTransformRef={planeTransformRef}
                 initialPosition={CROSS_SECTION_PHYSICS_INIT}
                 onIntersectionEnter={handleIntersectionEnter}
                 onIntersectionExit={handleIntersectionExit}
+                usesBallCollider={solidId === "sphere"}
               />
             </Suspense>
           </>
@@ -142,7 +157,7 @@ function SceneContent({
         <Suspense fallback={null}>
           <PhysicsSolid
             mode="rotation"
-            geometry={rotationGeometry}
+            geometry={solidId === "cylinder" ? geometry : rotationGeometry}
             initialPosition={[0, 0.5, 0]}
           />
         </Suspense>

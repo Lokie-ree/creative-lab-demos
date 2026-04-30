@@ -20,8 +20,8 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry, phys
 
   const axisGeometry = useMemo(() => {
     const geo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, -1.8, 0),
-      new THREE.Vector3(0, 1.8, 0),
+      new THREE.Vector3(0, -1.5, 0),
+      new THREE.Vector3(0, 1.5, 0),
     ]);
     return geo;
   }, []);
@@ -52,7 +52,11 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry, phys
   });
 
   useEffect(() => {
-    if (!rotationComplete) return;
+    if (!rotationComplete) {
+      gsap.killTweensOf(silhouetteMaterial);
+      silhouetteMaterial.opacity = 0.75;
+      return;
+    }
     if (silhouetteRef.current) {
       gsap.to((silhouetteRef.current as any).material, { opacity: 0, duration: 0.4 });
     }
@@ -62,11 +66,19 @@ export function RotationScene({ solidId, angle, rotationComplete, geometry, phys
     }
   }, [rotationComplete]);
 
+  useEffect(() => {
+    if (!physicsMode || !rotationComplete) return;
+    gsap.killTweensOf(rotationMaterial);
+    gsap.timeline()
+      .to(rotationMaterial, { opacity: 1, duration: 0.08 })
+      .to(rotationMaterial, { opacity: 0, duration: 0.3 });
+  }, [physicsMode, rotationComplete]);
+
   if (solidId === "cube") return null;
 
   return (
     <group position={[0, 0.5, 0]}>
-      <primitive object={axisLine} visible={!physicsMode} />
+      <primitive object={axisLine} visible={!physicsMode && !rotationComplete} />
       {silhouetteLine && (
         <primitive ref={silhouetteRef} object={silhouetteLine} visible={!physicsMode} />
       )}

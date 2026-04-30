@@ -46,7 +46,8 @@ export function useSolidRotation(solidId: SolidId, onComplete: () => void) {
     if (solidId === "cube") return null;
     const points = SILHOUETTES[solidId];
     if (!points) return null;
-    const segments = Math.max(3, Math.round((angle / 360) * 64));
+    const minSegments = solidId === "sphere" ? 24 : 3;
+    const segments = Math.max(minSegments, Math.round((angle / 360) * 64));
     return new THREE.LatheGeometry(points, segments, 0, (angle * Math.PI) / 180);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [solidId, bucketedAngle]);

@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import gsap from "gsap";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
@@ -7,10 +8,11 @@ import * as THREE from "three";
 interface PhysicsSolidProps {
   mode: "crossSection" | "rotation";
   geometry: THREE.BufferGeometry;
-  planeYRef?: { current: number };
+  planeTransformRef?: { current: { position: THREE.Vector3; quaternion: THREE.Quaternion } };
   onIntersectionEnter?: () => void;
   onIntersectionExit?: () => void;
   initialPosition?: [number, number, number];
+  usesBallCollider?: boolean;
 }
 
 const FLOOR_Y = -3;
@@ -18,14 +20,24 @@ const FLOOR_Y = -3;
 function PhysicsInner({
   mode,
   geometry,
-  planeYRef,
+  planeTransformRef,
   onIntersectionEnter,
   onIntersectionExit,
   initialPosition = [0, 0, 0],
+  usesBallCollider = false,
 }: PhysicsSolidProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const planeBodyRef = useRef<RapierRigidBody>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   const torqueFiredRef = useRef(false);
+
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    mat.opacity = 0;
+    gsap.to(mat, { opacity: 0.85, duration: 0.4, delay: 0.05 });
+  }, []);
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
@@ -38,8 +50,11 @@ function PhysicsInner({
     }
 
     // Keep kinematic plane collider in sync with joystick each frame
-    if (mode === "crossSection" && planeBodyRef.current && planeYRef) {
-      planeBodyRef.current.setNextKinematicTranslation({ x: 0, y: planeYRef.current, z: 0 });
+    if (mode === "crossSection" && planeBodyRef.current && planeTransformRef) {
+      const { position, quaternion } = planeTransformRef.current;
+      planeBodyRef.current.setNextKinematicTranslation(position);
+      // THREE.Quaternion has { x, y, z, w } — matches Rapier's expected shape directly
+      planeBodyRef.current.setNextKinematicRotation(quaternion);
     }
   });
 
@@ -62,14 +77,14 @@ function PhysicsInner({
       <RigidBody
         ref={rigidBodyRef}
         type="dynamic"
-        colliders="hull"
+        colliders={usesBallCollider ? "ball" : "hull"}
         restitution={0.85}
         friction={0.1}
         lockRotations={mode === "crossSection"}
         angularDamping={mode === "rotation" ? 0.2 : 0.1}
         position={initialPosition}
       >
-        <mesh geometry={geometry} onClick={handleClick}>
+        <mesh ref={meshRef} geometry={geometry} onClick={handleClick}>
           <meshStandardMaterial
             color={0xb8924e}
             transparent
@@ -89,7 +104,7 @@ function PhysicsInner({
             ref={planeBodyRef}
             type="kinematicPosition"
             colliders={false}
-            position={[0, planeYRef?.current ?? 0, 0]}
+            position={[0, 0, 0]}
             onCollisionEnter={onIntersectionEnter}
             onCollisionExit={onIntersectionExit}
           >

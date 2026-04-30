@@ -1,5 +1,6 @@
 import { Geometry, Base, type CSGGeometryRef } from "@react-three/csg";
 import { useRef, useEffect } from "react";
+import gsap from "gsap";
 import * as THREE from "three";
 import { wireframeMaterial } from "~/data/materials";
 import { JoystickGizmo } from "~/components/JoystickGizmo";
@@ -11,7 +12,7 @@ interface CuttingGeometryProps {
   onDragEnd?: () => void;
   onInteract?: () => void;
   physicsActive?: boolean;
-  onHeightChange?: (y: number) => void;
+  onPlaneTransformChange?: (transform: { position: THREE.Vector3; quaternion: THREE.Quaternion }) => void;
 }
 
 const SOLID_COLOR = 0x232018;
@@ -24,10 +25,24 @@ export function CuttingGeometry({
   onDragEnd,
   onInteract,
   physicsActive,
-  onHeightChange,
+  onPlaneTransformChange,
 }: CuttingGeometryProps) {
   const csg = useRef<CSGGeometryRef>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh || !Array.isArray(mesh.material)) return;
+    const mats = mesh.material as THREE.MeshStandardMaterial[];
+    if (physicsActive) {
+      gsap.to(mesh.scale, { x: 1.08, y: 1.08, z: 1.08, duration: 0.1, yoyo: true, repeat: 1 });
+      mats.forEach((mat) => gsap.to(mat, { opacity: 0, duration: 0.35, delay: 0.1 }));
+    } else {
+      gsap.killTweensOf(mesh.scale);
+      mesh.scale.set(1, 1, 1);
+      mats.forEach((mat) => gsap.to(mat, { opacity: 0.85, duration: 0.25 }));
+    }
+  }, [physicsActive]);
 
   // Safety net: if the CSG library's material-assignment path fails in R3F v9,
   // force a 2-entry array so groups with materialIndex 0/1 always resolve correctly.
@@ -65,10 +80,10 @@ export function CuttingGeometry({
           onInteract={onInteract}
           onShapeChange={onShapeChange}
           physicsActive={physicsActive}
-          onHeightChange={onHeightChange}
+          onPlaneTransformChange={onPlaneTransformChange}
         />
       </Geometry>
-      <mesh geometry={solidGeometry} material={wireframeMaterial} />
+      <mesh geometry={solidGeometry} material={wireframeMaterial} visible={!physicsActive} />
     </mesh>
   );
 }
