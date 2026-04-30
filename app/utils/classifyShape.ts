@@ -239,14 +239,17 @@ export function classifyShape(verts: THREE.Vector3[], solidId: SolidId): string 
   } else if (hullN === 3 && canTriangle) {
     label = "triangle";
   } else if (hullN === 4 && canQuad) {
-    label = aspect2d < 1.15 ? "square" : "rectangle";
+    label = aspect2d < 1.06 ? "square" : "rectangle";
   } else if (hullN === 5 && isPrism) {
     label = "pentagon";
   } else if ((hullN === 6 || hullN > 6) && isPrism) {
     label = "hexagon";
   } else {
     if (solidId === "cone" && aspect2d > 2.5) label = "parabola";
-    else label = aspect2d < 1.2 ? "circle" : "ellipse";
+    else {
+      const circleThreshold = solidId === "cylinder" ? 1.05 : 1.1;
+      label = aspect2d < circleThreshold ? "circle" : "ellipse";
+    }
   }
 
   return label;

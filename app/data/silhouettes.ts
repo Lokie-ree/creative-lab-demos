@@ -4,14 +4,16 @@ import type { SolidId } from "~/types";
 export const SILHOUETTES: Record<Exclude<SolidId, "cube">, THREE.Vector2[]> = {
   cone: [
     new THREE.Vector2(0, 1.5),
+    new THREE.Vector2(0.001, 1.499),
     new THREE.Vector2(1.2, -1.5),
+    new THREE.Vector2(1.199, -1.5),
     new THREE.Vector2(0, -1.5),
   ],
   cylinder: [
-    new THREE.Vector2(0, 1.5),    // top center — closes top cap
-    new THREE.Vector2(1, 1.5),    // top edge
-    new THREE.Vector2(1, -1.5),   // bottom edge
-    new THREE.Vector2(0, -1.5),   // bottom center — closes bottom cap
+    new THREE.Vector2(0, 1.5),
+    new THREE.Vector2(1, 1.5),
+    new THREE.Vector2(1, -1.5),
+    new THREE.Vector2(0, -1.5),
   ],
   sphere: [
     ...Array.from({ length: 17 }, (_, i) => {

@@ -135,6 +135,7 @@ function SceneContent({
                 initialPosition={CROSS_SECTION_PHYSICS_INIT}
                 onIntersectionEnter={handleIntersectionEnter}
                 onIntersectionExit={handleIntersectionExit}
+                usesBallCollider={solidId === "sphere"}
               />
             </Suspense>
           </>
@@ -156,7 +157,7 @@ function SceneContent({
         <Suspense fallback={null}>
           <PhysicsSolid
             mode="rotation"
-            geometry={rotationGeometry}
+            geometry={solidId === "cylinder" ? geometry : rotationGeometry}
             initialPosition={[0, 0.5, 0]}
           />
         </Suspense>

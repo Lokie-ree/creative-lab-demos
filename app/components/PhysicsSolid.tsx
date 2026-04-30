@@ -1,5 +1,6 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import gsap from "gsap";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import type { RapierRigidBody } from "@react-three/rapier";
 import * as THREE from "three";
@@ -11,6 +12,7 @@ interface PhysicsSolidProps {
   onIntersectionEnter?: () => void;
   onIntersectionExit?: () => void;
   initialPosition?: [number, number, number];
+  usesBallCollider?: boolean;
 }
 
 const FLOOR_Y = -3;
@@ -22,10 +24,20 @@ function PhysicsInner({
   onIntersectionEnter,
   onIntersectionExit,
   initialPosition = [0, 0, 0],
+  usesBallCollider = false,
 }: PhysicsSolidProps) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const planeBodyRef = useRef<RapierRigidBody>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
   const torqueFiredRef = useRef(false);
+
+  useEffect(() => {
+    const mesh = meshRef.current;
+    if (!mesh) return;
+    const mat = mesh.material as THREE.MeshStandardMaterial;
+    mat.opacity = 0;
+    gsap.to(mat, { opacity: 0.85, duration: 0.4, delay: 0.05 });
+  }, []);
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
@@ -65,14 +77,14 @@ function PhysicsInner({
       <RigidBody
         ref={rigidBodyRef}
         type="dynamic"
-        colliders="hull"
+        colliders={usesBallCollider ? "ball" : "hull"}
         restitution={0.85}
         friction={0.1}
         lockRotations={mode === "crossSection"}
         angularDamping={mode === "rotation" ? 0.2 : 0.1}
         position={initialPosition}
       >
-        <mesh geometry={geometry} onClick={handleClick}>
+        <mesh ref={meshRef} geometry={geometry} onClick={handleClick}>
           <meshStandardMaterial
             color={0xb8924e}
             transparent

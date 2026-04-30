@@ -1,5 +1,6 @@
 import { Geometry, Base, type CSGGeometryRef } from "@react-three/csg";
 import { useRef, useEffect } from "react";
+import gsap from "gsap";
 import * as THREE from "three";
 import { wireframeMaterial } from "~/data/materials";
 import { JoystickGizmo } from "~/components/JoystickGizmo";
@@ -32,10 +33,15 @@ export function CuttingGeometry({
   useEffect(() => {
     const mesh = meshRef.current;
     if (!mesh || !Array.isArray(mesh.material)) return;
-    const opacity = physicsActive ? 0 : 0.85;
-    (mesh.material as THREE.MeshStandardMaterial[]).forEach((mat) => {
-      mat.opacity = opacity;
-    });
+    const mats = mesh.material as THREE.MeshStandardMaterial[];
+    if (physicsActive) {
+      gsap.to(mesh.scale, { x: 1.08, y: 1.08, z: 1.08, duration: 0.1, yoyo: true, repeat: 1 });
+      mats.forEach((mat) => gsap.to(mat, { opacity: 0, duration: 0.35, delay: 0.1 }));
+    } else {
+      gsap.killTweensOf(mesh.scale);
+      mesh.scale.set(1, 1, 1);
+      mats.forEach((mat) => gsap.to(mat, { opacity: 0.85, duration: 0.25 }));
+    }
   }, [physicsActive]);
 
   // Safety net: if the CSG library's material-assignment path fails in R3F v9,
