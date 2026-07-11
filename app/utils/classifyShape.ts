@@ -247,7 +247,12 @@ export function classifyShape(verts: THREE.Vector3[], solidId: SolidId): string 
   } else {
     if (solidId === "cone" && aspect2d > 2.5) label = "parabola";
     else {
-      const circleThreshold = solidId === "cylinder" ? 1.05 : 1.1;
+      // Cylinder cross-sections collapse to coarse hulls (8-9 pts for a
+      // near-circular cut) whose min-area-bbox aspect overshoots the true
+      // geometric aspect — measured ~1.08-1.10 for cuts that are actually
+      // circular (true aspect 1.0-1.06). 1.2 restores the margin that
+      // existed before this branch split from the shared threshold.
+      const circleThreshold = solidId === "cylinder" ? 1.2 : 1.1;
       label = aspect2d < circleThreshold ? "circle" : "ellipse";
     }
   }
